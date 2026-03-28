@@ -63,18 +63,25 @@ function normalizeOptionalUrl(raw) {
   }
 }
 
-/** HTTPS URL or safe root-relative path (e.g. /images/photo.jpg) for blog images */
+/** HTTPS URL or site path (e.g. /images/photo.jpg) for blog images */
 function normalizeOptionalImageUrl(raw) {
   if (!raw || typeof raw !== "string") return "";
   let t = raw.trim();
   if (!t) return "";
-  if (t.startsWith("/") && !t.startsWith("//")) {
-    if (t.length > 500 || t.includes("..")) return "";
-    const pathOnly = t.split("?")[0].split("#")[0];
-    if (pathOnly.length < 2 || !/^\/[\w./%-]+$/i.test(pathOnly)) return "";
-    return pathOnly;
+  if (/^https?:\/\//i.test(t)) {
+    return normalizeOptionalUrl(t);
   }
-  return normalizeOptionalUrl(t);
+  t = t.replace(/\\/g, "/").replace(/^\.\/+/, "");
+  if (/^public\//i.test(t)) {
+    t = "/" + t.slice(7).replace(/^\/+/, "");
+  } else if (!t.startsWith("/")) {
+    t = "/" + t.replace(/^\/+/, "");
+  }
+  t = t.replace(/\/{2,}/g, "/");
+  if (t.length > 500 || t.includes("..")) return "";
+  const pathOnly = t.split("?")[0].split("#")[0];
+  if (pathOnly.length < 2 || !/^\/[\w./%-]+$/i.test(pathOnly)) return "";
+  return pathOnly;
 }
 
 function normalizeDate(raw) {

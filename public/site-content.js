@@ -81,14 +81,16 @@
         .map(function (post) {
           var href = post.link && String(post.link).trim() ? escapeHtml(post.link) : "#";
           var title = escapeHtml(post.title || "");
-          var imgSrc = post.image && String(post.image).trim() ? escapeHtml(post.image.trim()) : "";
+          var rawImg = post.image && String(post.image).trim() ? String(post.image).trim() : "";
+          var imgSrc = rawImg ? escapeHtml(rawImg) : "";
           var imgAlt = escapeHtml(post.title || "Blog image");
+          /* no loading="lazy": images live inside .reveal (opacity 0) until scroll; lazy + IO can delay load */
           var imgBlock = imgSrc
             ? '<figure class="blog-figure"><img class="blog-image" src="' +
               imgSrc +
               '" alt="' +
               imgAlt +
-              '" loading="lazy" decoding="async"></figure>'
+              '" decoding="async"></figure>'
             : "";
           return (
             '<li class="blog-item">' +

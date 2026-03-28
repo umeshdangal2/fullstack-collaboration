@@ -171,7 +171,7 @@
         blogDate.value = post.date || "";
         blogExcerpt.value = post.excerpt || "";
         blogLink.value = post.link || "";
-        blogImage.value = post.image || "";
+        if (blogImage) blogImage.value = post.image || "";
         blogSave.textContent = "Update post";
         blogCancelEdit.classList.remove("admin-hidden");
         blogTitle.focus();
@@ -248,7 +248,7 @@
       date: blogDate.value,
       excerpt: blogExcerpt.value,
       link: blogLink.value.trim(),
-      image: blogImage.value.trim(),
+      image: blogImage ? blogImage.value.trim() : "",
     });
     var url = id ? "/api/admin/blog/" + encodeURIComponent(id) : "/api/admin/blog";
     var method = id ? "PUT" : "POST";
