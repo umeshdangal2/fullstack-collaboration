@@ -1,0 +1,39 @@
+{
+  "posts": [
+    {
+      "id": "b7c2a1f0-3e4d-5b6a-9c8d-1e2f3a4b5c6d",
+      "title": "Shipping a side project without burning out",
+      "excerpt": "Small scopes, visible milestones, and when “good enough” is actually the right bar.",
+      "link": "",
+      "date": "2026-03-15"
+    },
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567891",
+      "title": "Why I default to system fonts in prototypes",
+      "excerpt": "Typography decisions come later — first I want to test flow, density, and hierarchy with zero friction.",
+      "link": "",
+      "date": "2026-02-28"
+    },
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567892",
+      "title": "Year in review: tools that stuck",
+      "excerpt": "A short list of what stayed in my stack after twelve months of experiments.",
+      "link": "",
+      "date": "2026-01-10"
+    },
+    {
+      "id": "a6b3ef4a-5de8-49ac-a5f2-66e64fbd5327",
+      "title": "AI in cybersecurity",
+      "excerpt": "The Business Research Company has recently published an article regarding the trend of using AI in the field of cybersecurity. The Report covers the total market cap of 2025 in Cybersecurity, which was 30.68 trillion US dollars. In 2026, it is expected to increase by $9 billion. After that the trend seems to be increasing significantly to reach the market size of $104 billions by the year 2030.",
+      "link": "",
+      "date": "2026-03-28"
+    },
+    {
+      "id": "8f757404-46d1-4cbc-ae2e-6d280cf44f54",
+      "title": "Bar Charts",
+      "excerpt": "A bar chart is the most basic yet most useful visualization method, which is used to show the increasing or decreasing trends, volume, significant statistics, frequency, etc. I make it easier to understand data, the visual difference between two variables and estimate the correct amplitude of progress or regress.",
+      "link": "",
+      "date": "2026-03-28"
+    }
+  ]
+}

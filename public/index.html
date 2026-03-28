@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Umesh Dangal — Portfolio</title>
+  <meta name="description" content="Personal portfolio — designer and developer.">
+  <meta name="theme-color" content="#f7f4ec">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="#hero" aria-label="Home">UD</a>
+      <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+        <span class="nav-toggle-bar" aria-hidden="true"></span>
+        <span class="nav-toggle-bar" aria-hidden="true"></span>
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="Primary">
+        <div class="nav-backdrop" aria-hidden="true" tabindex="-1"></div>
+        <ul class="nav-list">
+          <li><a href="#about">About</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#blog">Blog</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="hero" class="hero section">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="container hero-content">
+        <p class="hero-eyebrow">Hello — I’m</p>
+        <h1 class="hero-name">Umesh Dangal</h1>
+        <p class="hero-tagline">I craft calm, purposeful digital experiences where clarity meets craft.</p>
+        <a class="hero-cta" href="#projects">View work</a>
+      </div>
+    </section>
+
+    <section id="about" class="about section">
+      <div class="container narrow reveal">
+        <h2 class="section-title">About</h2>
+        <div class="about-grid">
+          <p class="about-lead">I;m a passionate data enthuasiast and programmer, skilled in Python,SQL and data visualization, driven by curiosity and a love for problem-solving."</p>
+          <p class="about-text">I am eager to apply my skills in data analysis and SQL through internship and collaborative oppertunities. I thrive on turning raw data into actionable insights, and i'm excited to groe in a dynamic team ennvironment. I am committed to continuous leaerning and bringing a proactive, analytical mindset to every project i take on.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="projects" class="projects section">
+      <div class="container reveal">
+        <h2 class="section-title">Projects</h2>
+        <p class="section-intro">Selected work — case studies and experiments.</p>
+        <p id="projects-status" class="section-intro admin-hidden" aria-live="polite"></p>
+        <ul id="project-list" class="project-list"></ul>
+      </div>
+    </section>
+
+    <section id="blog" class="blog section">
+      <div class="container reveal">
+        <h2 class="section-title">Blog</h2>
+        <p class="section-intro">Notes, updates, and things I’m learning.</p>
+        <p id="blog-status" class="section-intro admin-hidden" aria-live="polite"></p>
+        <ul id="blog-list" class="blog-list"></ul>
+      </div>
+    </section>
+
+    <section id="contact" class="contact section">
+      <div class="container narrow reveal">
+        <h2 class="section-title">Contact</h2>
+        <p class="contact-lead">Say hello for collaborations, speaking, or a coffee chat — I usually reply within a few days.</p>
+        <p class="contact-email"><a href="mailto:hello@example.com">hello@example.com</a></p>
+        <ul class="contact-links">
+          <li><a href="#" rel="noopener noreferrer">LinkedIn</a></li>
+          <li><a href="#" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="#" rel="noopener noreferrer">Dribbble</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p class="footer-copy">© <span id="year"></span> Umesh Dangal. Built with care.</p>
+    </div>
+  </footer>
+
+  <script src="site-content.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
