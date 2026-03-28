@@ -1,13 +1,14 @@
 "use strict";
 
 const path = require("path");
-const fs = require("fs/promises");
 const crypto = require("crypto");
 const express = require("express");
-const session = require("express-session");
+const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+
+const storage = require("./lib/cms-storage");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -17,6 +18,7 @@ const isProd = NODE_ENV === "production";
 const DATA_DIR = path.join(__dirname, "data");
 const BLOG_FILE = path.join(DATA_DIR, "blog.json");
 const PROJECTS_FILE = path.join(DATA_DIR, "projects.json");
+const ADMIN_COOKIE = "portfolio_admin";
 
 const LIMITS = {
   title: 200,
@@ -26,8 +28,8 @@ const LIMITS = {
   year: 8,
 };
 
-function requireProdSecrets() {
-  if (!isProd) return;
+function requireProdSecretsForLocal() {
+  if (!isProd || require.main !== module) return;
   const sec = process.env.SESSION_SECRET;
   if (!sec || String(sec).length < 32) {
     console.error("FATAL: Production requires SESSION_SECRET (min 32 characters).");
@@ -38,8 +40,6 @@ function requireProdSecrets() {
     process.exit(1);
   }
 }
-
-requireProdSecrets();
 
 function sanitizeText(input, maxLen) {
   if (typeof input !== "string") return "";
@@ -63,7 +63,6 @@ function normalizeOptionalUrl(raw) {
   }
 }
 
-/** HTTPS URL or site path (e.g. /images/photo.jpg) for blog images */
 function normalizeOptionalImageUrl(raw) {
   if (!raw || typeof raw !== "string") return "";
   let t = raw.trim();
@@ -96,31 +95,14 @@ function normalizeDate(raw) {
   return `${m[1]}-${m[2]}-${m[3]}`;
 }
 
-async function atomicWriteJson(filePath, obj) {
-  const json = JSON.stringify(obj, null, 2);
-  const tmp = `${filePath}.${crypto.randomBytes(8).toString("hex")}.tmp`;
-  await fs.writeFile(tmp, json, "utf8");
-  await fs.rename(tmp, filePath);
-}
-
-async function readJsonSafe(filePath, fallback) {
-  try {
-    const raw = await fs.readFile(filePath, "utf8");
-    return JSON.parse(raw);
-  } catch (e) {
-    if (e.code === "ENOENT") return fallback;
-    throw e;
-  }
-}
-
 async function readBlog() {
-  const data = await readJsonSafe(BLOG_FILE, { posts: [] });
+  const data = await storage.readBlog(BLOG_FILE);
   if (!data || !Array.isArray(data.posts)) return { posts: [] };
   return data;
 }
 
 async function readProjects() {
-  const data = await readJsonSafe(PROJECTS_FILE, { items: [] });
+  const data = await storage.readProjects(PROJECTS_FILE);
   if (!data || !Array.isArray(data.items)) return { items: [] };
   return data;
 }
@@ -155,9 +137,43 @@ async function verifyAdminPassword(plain) {
   return false;
 }
 
+const cookieSecret =
+  process.env.SESSION_SECRET ||
+  (isProd ? null : "dev-only-insecure-secret-change-for-any-dev-share");
+
+if (isProd && require.main === module && !process.env.SESSION_SECRET) {
+  console.error("FATAL: SESSION_SECRET required in production.");
+  process.exit(1);
+}
+
 function requireAuth(req, res, next) {
-  if (req.session && req.session.admin === true) return next();
+  if (req.signedCookies[ADMIN_COOKIE] === "1") return next();
   return res.status(401).json({ error: "Unauthorized" });
+}
+
+function requirePersistence(req, res, next) {
+  if (!storage.persistenceAvailable()) {
+    return res.status(503).json({
+      error:
+        "Saving is disabled on Vercel without Redis: add Upstash Redis from Vercel Storage / Marketplace and set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN (see .env.example).",
+    });
+  }
+  next();
+}
+
+function setAdminCookie(res) {
+  res.cookie(ADMIN_COOKIE, "1", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: "strict",
+    signed: true,
+    maxAge: 1000 * 60 * 60 * 12,
+    path: "/",
+  });
+}
+
+function clearAdminCookie(res) {
+  res.clearCookie(ADMIN_COOKIE, { path: "/", signed: true });
 }
 
 app.set("trust proxy", 1);
@@ -170,30 +186,7 @@ app.use(
 );
 
 app.use(express.json({ limit: "64kb" }));
-
-const sessionSecret =
-  process.env.SESSION_SECRET ||
-  (isProd ? null : "dev-only-insecure-secret-change-for-any-shared-use");
-
-if (isProd && !process.env.SESSION_SECRET) {
-  console.error("FATAL: SESSION_SECRET required in production.");
-  process.exit(1);
-}
-
-app.use(
-  session({
-    name: "portfolio_admin_sid",
-    secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: "strict",
-      maxAge: 1000 * 60 * 60 * 12,
-    },
-  })
-);
+app.use(cookieParser(cookieSecret));
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -212,20 +205,17 @@ app.post("/api/auth/login", loginLimiter, async (req, res) => {
   if (!ok) {
     return res.status(401).json({ error: "Invalid password" });
   }
-  req.session.admin = true;
-  req.session.touch();
+  setAdminCookie(res);
   return res.json({ ok: true });
 });
 
 app.post("/api/auth/logout", (req, res) => {
-  req.session.destroy(function () {
-    res.clearCookie("portfolio_admin_sid", { path: "/" });
-    res.json({ ok: true });
-  });
+  clearAdminCookie(res);
+  res.json({ ok: true });
 });
 
 app.get("/api/auth/status", (req, res) => {
-  res.json({ authenticated: !!(req.session && req.session.admin) });
+  res.json({ authenticated: req.signedCookies[ADMIN_COOKIE] === "1" });
 });
 
 app.get("/api/public/content", async (req, res, next) => {
@@ -252,7 +242,9 @@ app.get("/api/admin/content", requireAuth, async (req, res, next) => {
   }
 });
 
-app.post("/api/admin/blog", requireAuth, async (req, res, next) => {
+const writeGuard = [requireAuth, requirePersistence];
+
+app.post("/api/admin/blog", ...writeGuard, async (req, res, next) => {
   try {
     const title = sanitizeText(req.body.title, LIMITS.title);
     const excerpt = sanitizeText(req.body.excerpt, LIMITS.excerpt);
@@ -271,14 +263,14 @@ app.post("/api/admin/blog", requireAuth, async (req, res, next) => {
       date,
     };
     data.posts.push(post);
-    await atomicWriteJson(BLOG_FILE, data);
+    await storage.writeBlog(BLOG_FILE, data);
     res.status(201).json({ post });
   } catch (e) {
     next(e);
   }
 });
 
-app.put("/api/admin/blog/:id", requireAuth, async (req, res, next) => {
+app.put("/api/admin/blog/:id", ...writeGuard, async (req, res, next) => {
   try {
     const id = req.params.id;
     if (!id || typeof id !== "string" || id.length > 80) {
@@ -295,28 +287,28 @@ app.put("/api/admin/blog/:id", requireAuth, async (req, res, next) => {
     const idx = data.posts.findIndex((p) => p.id === id);
     if (idx === -1) return res.status(404).json({ error: "Not found" });
     data.posts[idx] = { ...data.posts[idx], title, excerpt, link, image, date };
-    await atomicWriteJson(BLOG_FILE, data);
+    await storage.writeBlog(BLOG_FILE, data);
     res.json({ post: data.posts[idx] });
   } catch (e) {
     next(e);
   }
 });
 
-app.delete("/api/admin/blog/:id", requireAuth, async (req, res, next) => {
+app.delete("/api/admin/blog/:id", ...writeGuard, async (req, res, next) => {
   try {
     const id = req.params.id;
     const data = await readBlog();
     const nextPosts = data.posts.filter((p) => p.id !== id);
     if (nextPosts.length === data.posts.length) return res.status(404).json({ error: "Not found" });
     data.posts = nextPosts;
-    await atomicWriteJson(BLOG_FILE, data);
+    await storage.writeBlog(BLOG_FILE, data);
     res.json({ ok: true });
   } catch (e) {
     next(e);
   }
 });
 
-app.post("/api/admin/projects", requireAuth, async (req, res, next) => {
+app.post("/api/admin/projects", ...writeGuard, async (req, res, next) => {
   try {
     const year = sanitizeText(req.body.year, LIMITS.year);
     const title = sanitizeText(req.body.title, LIMITS.title);
@@ -336,14 +328,14 @@ app.post("/api/admin/projects", requireAuth, async (req, res, next) => {
       url,
     };
     data.items.push(item);
-    await atomicWriteJson(PROJECTS_FILE, data);
+    await storage.writeProjects(PROJECTS_FILE, data);
     res.status(201).json({ project: item });
   } catch (e) {
     next(e);
   }
 });
 
-app.put("/api/admin/projects/:id", requireAuth, async (req, res, next) => {
+app.put("/api/admin/projects/:id", ...writeGuard, async (req, res, next) => {
   try {
     const id = req.params.id;
     if (!id || typeof id !== "string" || id.length > 80) {
@@ -361,21 +353,21 @@ app.put("/api/admin/projects/:id", requireAuth, async (req, res, next) => {
     const idx = data.items.findIndex((p) => p.id === id);
     if (idx === -1) return res.status(404).json({ error: "Not found" });
     data.items[idx] = { ...data.items[idx], year, title, description, tags, url };
-    await atomicWriteJson(PROJECTS_FILE, data);
+    await storage.writeProjects(PROJECTS_FILE, data);
     res.json({ project: data.items[idx] });
   } catch (e) {
     next(e);
   }
 });
 
-app.delete("/api/admin/projects/:id", requireAuth, async (req, res, next) => {
+app.delete("/api/admin/projects/:id", ...writeGuard, async (req, res, next) => {
   try {
     const id = req.params.id;
     const data = await readProjects();
     const nextItems = data.items.filter((p) => p.id !== id);
     if (nextItems.length === data.items.length) return res.status(404).json({ error: "Not found" });
     data.items = nextItems;
-    await atomicWriteJson(PROJECTS_FILE, data);
+    await storage.writeProjects(PROJECTS_FILE, data);
     res.json({ ok: true });
   } catch (e) {
     next(e);
@@ -393,23 +385,26 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Server error" });
 });
 
-async function ensureDataDir() {
-  await fs.mkdir(DATA_DIR, { recursive: true });
+requireProdSecretsForLocal();
+
+if (require.main === module) {
+  const fs = require("fs/promises");
+  fs.mkdir(DATA_DIR, { recursive: true })
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Portfolio server at http://localhost:${PORT}`);
+        console.log(`Admin: http://localhost:${PORT}/admin`);
+        if (!isProd && !process.env.ADMIN_PASSWORD_HASH && !process.env.ADMIN_PASSWORD) {
+          console.warn(
+            "WARN: Set ADMIN_PASSWORD_HASH or ADMIN_PASSWORD (dev only) in .env to enable admin login."
+          );
+        }
+      });
+    })
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    });
 }
 
-ensureDataDir()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Portfolio server at http://localhost:${PORT}`);
-      console.log(`Admin (not linked in nav): http://localhost:${PORT}/admin`);
-      if (!isProd && !process.env.ADMIN_PASSWORD_HASH && !process.env.ADMIN_PASSWORD) {
-        console.warn(
-          "WARN: Set ADMIN_PASSWORD_HASH or ADMIN_PASSWORD (dev only) in .env to enable admin login."
-        );
-      }
-    });
-  })
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
+module.exports = app;
