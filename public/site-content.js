@@ -207,12 +207,14 @@
           var postId = button.getAttribute("data-post");
           var likedKey = "liked-" + postId;
           if (localStorage.getItem(likedKey)) {
-            alert("You already liked this post.");
-            return;
+            localStorage.removeItem(likedKey);
+            button.classList.remove("liked");
+            button.textContent = "👍";
+          } else {
+            localStorage.setItem(likedKey, "true");
+            button.classList.add("liked");
+            button.textContent = "👍 Liked";
           }
-          localStorage.setItem(likedKey, "true");
-          button.classList.add("liked");
-          button.textContent = "👍 Liked";
           return;
         }
 
@@ -247,7 +249,7 @@
           if (comment) {
             var commentEl = document.createElement("div");
             commentEl.className = "comment";
-            commentEl.textContent = comment;
+            commentEl.innerHTML = '<div class="comment-avatar">👤</div><div class="comment-body"><div class="comment-user">userunknown</div><div class="comment-text">' + escapeHtml(comment) + '</div></div>';
             list.appendChild(commentEl);
             input.value = "";
           }

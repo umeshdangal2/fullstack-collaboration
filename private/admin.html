@@ -4,142 +4,146 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Content admin — Portfolio</title>
+  <title>Admin — Portfolio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body class="admin-page">
-  <div class="admin-wrap">
-    <header class="admin-top">
-      <div>
-        <h1 class="admin-brand">Content <span>Admin</span></h1>
-      </div>
-      <div class="admin-top-actions">
-        <a href="/">← Back to site</a>
+  <header class="site-header admin-header">
+    <div class="header-inner">
+      <a class="logo" href="/">UD</a>
+      <div class="admin-header-actions">
+        <a href="/" class="admin-back-link">← Back to site</a>
         <button type="button" id="btn-logout" class="admin-btn admin-btn-ghost admin-hidden">Log out</button>
       </div>
-    </header>
-
-    <div id="login-panel" class="admin-panel">
-      <h2>Sign in</h2>
-      <p class="section-intro" style="margin-top: -0.5rem">This page is not linked from the public site. Use a strong password and keep your <code>.env</code> secret.</p>
-      <div id="login-msg" class="admin-msg admin-hidden" role="alert"></div>
-      <form id="login-form" class="admin-form-grid" autocomplete="current-password">
-        <div class="admin-field">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" required minlength="1" maxlength="500" autocomplete="current-password">
-        </div>
-        <div class="admin-actions-row">
-          <button type="submit" class="admin-btn admin-btn-primary">Sign in</button>
-        </div>
-      </form>
     </div>
+  </header>
 
-    <div id="dashboard" class="admin-hidden">
-      <div id="dash-msg" class="admin-msg admin-hidden" role="status"></div>
+  <div class="admin-layout">
+    <aside id="admin-sidebar" class="admin-sidebar admin-hidden">
+      <nav class="admin-nav">
+        <a href="#dashboard" class="admin-nav-item active" data-section="dashboard">📊 Dashboard</a>
+        <div class="admin-nav-label">Analytics (Coming soon)</div>
+      </nav>
+    </aside>
 
-      <section class="admin-panel" aria-labelledby="blog-heading">
-        <h2 id="blog-heading">Blog posts</h2>
-        <p class="admin-section-label">Add or edit</p>
-        <form id="blog-form" class="admin-form-grid">
-          <input type="hidden" id="blog-edit-id" value="">
-          <div class="admin-form-grid two">
+    <main class="admin-main">
+      <div id="login-panel" class="admin-login-panel">
+        <div class="container narrow reveal is-visible">
+          <h2 class="section-title">Sign In</h2>
+          <p class="section-intro">This page is not linked from the public site. Use a strong password and keep your <code>.env</code> secret.</p>
+          <div id="login-msg" class="admin-msg admin-hidden" role="alert"></div>
+          <form id="login-form" class="admin-form-grid">
             <div class="admin-field">
-              <label for="blog-title">Title</label>
-              <input type="text" id="blog-title" required maxlength="200">
+              <label for="password">Password</label>
+              <input type="password" id="password" name="password" required minlength="1" maxlength="500" autocomplete="current-password">
             </div>
-            <div class="admin-field">
-              <label for="blog-date">Date</label>
-              <input type="date" id="blog-date" required>
-              <p class="admin-field-hint">Shown on the public blog list.</p>
+            <div class="admin-actions-row">
+              <button type="submit" class="admin-btn admin-btn-primary">Sign in</button>
             </div>
-          </div>
-          <div class="admin-field">
-            <label for="blog-excerpt">Excerpt</label>
-            <textarea id="blog-excerpt" required maxlength="4000"></textarea>
-          </div>
-          <div class="admin-field">
-            <label for="blog-link">Link URL (optional)</label>
-            <input type="url" id="blog-link" maxlength="2000" placeholder="https://…">
-            <p class="admin-field-hint">If empty, the title links to # on the homepage.</p>
-          </div>
-          <div class="admin-field">
-            <label for="blog-image">Image URL (optional)</label>
-            <input type="text" id="blog-image" maxlength="2000" placeholder="https://… or /images/photo.jpg">
-            <p class="admin-field-hint">Use a full <code>https://…</code> link, or a site path such as <code>/images/your-file.jpg</code>, <code>images/your-file.jpg</code>, or <code>public/images/your-file.jpg</code> (file must live under <code>public/</code>).</p>
-          </div>
-          <div class="admin-actions-row">
-            <button type="submit" class="admin-btn admin-btn-primary" id="blog-save">Save post</button>
-            <button type="button" class="admin-btn admin-btn-ghost admin-hidden" id="blog-cancel-edit">Cancel edit</button>
-          </div>
-        </form>
-
-        <div class="admin-divider" role="presentation"></div>
-        <p class="admin-section-label">Existing posts</p>
-          <table class="admin-table" id="blog-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Title</th>
-                <th>Image</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="blog-table-body"></tbody>
-          </table>
-      </section>
-
-      <section class="admin-panel" aria-labelledby="projects-heading">
-        <h2 id="projects-heading">Projects</h2>
-        <p class="admin-section-label">Add or edit</p>
-        <form id="project-form" class="admin-form-grid">
-          <input type="hidden" id="project-edit-id" value="">
-          <div class="admin-form-grid two">
-            <div class="admin-field">
-              <label for="project-year">Year</label>
-              <input type="text" id="project-year" required maxlength="8" placeholder="2026">
-            </div>
-            <div class="admin-field">
-              <label for="project-url">Project URL (optional)</label>
-              <input type="url" id="project-url" maxlength="2000" placeholder="https://…">
-              <p class="admin-field-hint">Makes the title a link on the homepage.</p>
-            </div>
-          </div>
-          <div class="admin-field">
-            <label for="project-title">Title</label>
-            <input type="text" id="project-title" required maxlength="200">
-          </div>
-          <div class="admin-field">
-            <label for="project-desc">Description</label>
-            <textarea id="project-desc" required maxlength="4000"></textarea>
-          </div>
-          <div class="admin-field">
-            <label for="project-tags">Tags</label>
-            <input type="text" id="project-tags" maxlength="300" placeholder="Python · Data">
-          </div>
-          <div class="admin-actions-row">
-            <button type="submit" class="admin-btn admin-btn-primary" id="project-save">Save project</button>
-            <button type="button" class="admin-btn admin-btn-ghost admin-hidden" id="project-cancel-edit">Cancel edit</button>
-          </div>
-        </form>
-
-        <div class="admin-divider" role="presentation"></div>
-        <p class="admin-section-label">Existing projects</p>
-        <div class="admin-table-wrap">
-          <table class="admin-table" id="projects-table">
-            <thead>
-              <tr>
-                <th>Year</th>
-                <th>Title</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="projects-table-body"></tbody>
-          </table>
+          </form>
         </div>
-      </section>
+      </div>
+
+      <div id="dashboard" class="admin-hidden">
+        <div class="container reveal">
+          <div id="dash-msg" class="admin-msg admin-hidden" role="status"></div>
+
+          <section id="blog-section" class="admin-section">
+            <div class="section-header">
+              <h2 class="section-title">Blog Posts</h2>
+              <button type="button" id="btn-add-blog" class="admin-btn admin-btn-primary">+ Add Blog</button>
+            </div>
+            <p class="section-intro">Manage your blog posts</p>
+            <ul id="blog-grid" class="admin-grid"></ul>
+          </section>
+
+          <section id="project-section" class="admin-section">
+            <div class="section-header">
+              <h2 class="section-title">Projects</h2>
+              <button type="button" id="btn-add-project" class="admin-btn admin-btn-primary">+ Add Project</button>
+            </div>
+            <p class="section-intro">Manage your projects</p>
+            <ul id="project-grid" class="admin-grid"></ul>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="edit-modal" class="admin-modal admin-hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">Edit Post</h2>
+        <button type="button" class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-form" class="admin-form-grid">
+          <input type="hidden" id="edit-type" value="blog">
+          <input type="hidden" id="edit-id" value="">
+
+          <!-- Blog Fields -->
+          <div id="blog-fields" class="form-fields-group">
+            <div class="admin-form-grid two">
+              <div class="admin-field">
+                <label for="edit-title">Title</label>
+                <input type="text" id="edit-title" maxlength="200">
+              </div>
+              <div class="admin-field">
+                <label for="edit-date">Date</label>
+                <input type="date" id="edit-date">
+              </div>
+            </div>
+            <div class="admin-field">
+              <label for="edit-excerpt">Excerpt</label>
+              <textarea id="edit-excerpt" maxlength="4000"></textarea>
+            </div>
+            <div class="admin-field">
+              <label for="edit-link">Link URL (optional)</label>
+              <input type="url" id="edit-link" maxlength="2000" placeholder="https://…">
+            </div>
+            <div class="admin-field">
+              <label for="edit-image">Image URL (optional)</label>
+              <input type="text" id="edit-image" maxlength="2000" placeholder="https://… or /images/photo.jpg">
+            </div>
+          </div>
+
+          <!-- Project Fields -->
+          <div id="project-fields" class="form-fields-group admin-hidden">
+            <div class="admin-form-grid two">
+              <div class="admin-field">
+                <label for="edit-year">Year</label>
+                <input type="text" id="edit-year" maxlength="8" placeholder="2026">
+              </div>
+              <div class="admin-field">
+                <label for="edit-project-url">Project URL (optional)</label>
+                <input type="url" id="edit-project-url" maxlength="2000" placeholder="https://…">
+              </div>
+            </div>
+            <div class="admin-field">
+              <label for="edit-project-title">Title</label>
+              <input type="text" id="edit-project-title" maxlength="200">
+            </div>
+            <div class="admin-field">
+              <label for="edit-desc">Description</label>
+              <textarea id="edit-desc" maxlength="4000"></textarea>
+            </div>
+            <div class="admin-field">
+              <label for="edit-tags">Tags</label>
+              <input type="text" id="edit-tags" maxlength="300" placeholder="Python · Data">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="admin-btn admin-btn-ghost modal-close">Cancel</button>
+        <button type="button" id="btn-delete" class="admin-btn admin-btn-danger">Delete</button>
+        <button type="button" id="btn-save" class="admin-btn admin-btn-primary">Save</button>
+      </div>
     </div>
   </div>
 
