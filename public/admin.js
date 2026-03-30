@@ -86,12 +86,17 @@
           (p.image && String(p.image).trim() ? "Yes" : "—") +
           "</td>" +
           '<td class="admin-table-actions">' +
+          '<div class="dropdown">' +
+          '<button type="button" class="dropdown-toggle">⋯</button>' +
+          '<div class="dropdown-menu">' +
           '<button type="button" data-blog-edit="' +
           escapeHtml(p.id) +
           '">Edit</button>' +
           '<button type="button" class="danger" data-blog-del="' +
           escapeHtml(p.id) +
           '">Delete</button>' +
+          '</div>' +
+          '</div>' +
           "</td>" +
           "</tr>"
         );
@@ -112,12 +117,17 @@
           escapeHtml(p.title || "") +
           "</td>" +
           '<td class="admin-table-actions">' +
+          '<div class="dropdown">' +
+          '<button type="button" class="dropdown-toggle">⋯</button>' +
+          '<div class="dropdown-menu">' +
           '<button type="button" data-project-edit="' +
           escapeHtml(p.id) +
           '">Edit</button>' +
           '<button type="button" class="danger" data-project-del="' +
           escapeHtml(p.id) +
           '">Delete</button>' +
+          '</div>' +
+          '</div>' +
           "</td>" +
           "</tr>"
         );
@@ -158,6 +168,13 @@
   blogTableBody.addEventListener("click", function (e) {
     var t = e.target;
     if (!(t instanceof HTMLElement)) return;
+
+    if (t.matches(".dropdown-toggle")) {
+      var dropdown = t.closest(".dropdown");
+      dropdown.classList.toggle("open");
+      return;
+    }
+
     var editId = t.getAttribute("data-blog-edit");
     var delId = t.getAttribute("data-blog-del");
     if (editId) {
@@ -199,6 +216,13 @@
   projectsTableBody.addEventListener("click", function (e) {
     var t = e.target;
     if (!(t instanceof HTMLElement)) return;
+
+    if (t.matches(".dropdown-toggle")) {
+      var dropdown = t.closest(".dropdown");
+      dropdown.classList.toggle("open");
+      return;
+    }
+
     var editId = t.getAttribute("data-project-edit");
     var delId = t.getAttribute("data-project-del");
     if (editId) {
