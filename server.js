@@ -51,6 +51,46 @@ function sanitizeText(input, maxLen) {
   return s;
 }
 
+function sanitizeNotebookHtml(html) {
+  if (typeof html !== "string" || !html.trim()) return "";
+  const dangerous = /<script\b|on\w+\s*=|javascript:/i;
+  if (dangerous.test(html)) return "";
+  return html.replace(/<\/?(html|head|body|meta|link|style|iframe|object|embed|form|input|button)[^>]*>/gi, "");
+}
+
+function sanitizeNotebookJson(raw) {
+  if (!raw) return null;
+  let parsed;
+  if (typeof raw === "string") {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  } else if (typeof raw === "object") {
+    parsed = raw;
+  } else {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.cells)) return null;
+  // Keep only expected top-level notebook fields to avoid abuse.
+  return {
+    nbformat: Number(parsed.nbformat) || 4,
+    nbformat_minor: Number(parsed.nbformat_minor) || 0,
+    metadata: parsed.metadata || {},
+    cells: parsed.cells.map(function(c) {
+      if (!c || typeof c !== "object") return null;
+      return {
+        cell_type: c.cell_type || "",
+        source: Array.isArray(c.source) ? c.source.slice(0, 1000) : [],
+        metadata: c.metadata || {},
+        outputs: Array.isArray(c.outputs) ? c.outputs.slice(0, 100) : [],
+        execution_count: c.execution_count || null,
+      };
+    }).filter(Boolean),
+  };
+}
+
 function normalizeOptionalUrl(raw) {
   if (!raw || typeof raw !== "string") return "";
   let t = raw.trim();
@@ -187,7 +227,7 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "64kb" }));
+app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser(cookieSecret));
 
 const loginLimiter = rateLimit({
@@ -312,11 +352,16 @@ app.delete("/api/admin/blog/:id", ...writeGuard, async (req, res, next) => {
 
 app.post("/api/admin/projects", ...writeGuard, async (req, res, next) => {
   try {
+    console.log('POST /api/admin/projects body:', req.body);
     const year = sanitizeText(req.body.year, LIMITS.year);
     const title = sanitizeText(req.body.title, LIMITS.title);
     const description = sanitizeText(req.body.description, LIMITS.description);
+    const details = sanitizeText(req.body.details || "", 10000);
     const tags = sanitizeText(req.body.tags, LIMITS.tags);
     const url = normalizeOptionalUrl(req.body.url);
+    const notebook = normalizeOptionalUrl(req.body.notebook);
+    const notebookHtml = sanitizeNotebookHtml(req.body.notebookHtml);
+    const notebookJson = sanitizeNotebookJson(req.body.notebookJson);
     if (!year) return res.status(400).json({ error: "Year is required" });
     if (!title) return res.status(400).json({ error: "Title is required" });
     if (!description) return res.status(400).json({ error: "Description is required" });
@@ -326,8 +371,12 @@ app.post("/api/admin/projects", ...writeGuard, async (req, res, next) => {
       year,
       title,
       description,
+      details,
       tags,
       url,
+      notebook,
+      notebook_html: notebookHtml,
+      notebook_json: notebookJson,
     };
     data.items.push(item);
     await storage.writeProjects(PROJECTS_FILE, data);
@@ -339,6 +388,7 @@ app.post("/api/admin/projects", ...writeGuard, async (req, res, next) => {
 
 app.put("/api/admin/projects/:id", ...writeGuard, async (req, res, next) => {
   try {
+    console.log('PUT /api/admin/projects/' + req.params.id + ' body:', req.body);
     const id = req.params.id;
     if (!id || typeof id !== "string" || id.length > 80) {
       return res.status(400).json({ error: "Invalid id" });
@@ -346,21 +396,38 @@ app.put("/api/admin/projects/:id", ...writeGuard, async (req, res, next) => {
     const year = sanitizeText(req.body.year, LIMITS.year);
     const title = sanitizeText(req.body.title, LIMITS.title);
     const description = sanitizeText(req.body.description, LIMITS.description);
+    const details = sanitizeText(req.body.details || "", 10000);
     const tags = sanitizeText(req.body.tags, LIMITS.tags);
     const url = normalizeOptionalUrl(req.body.url);
+    const notebook = normalizeOptionalUrl(req.body.notebook);
+    const notebookHtml = sanitizeNotebookHtml(req.body.notebookHtml);
+    const notebookJson = sanitizeNotebookJson(req.body.notebookJson);
     if (!year) return res.status(400).json({ error: "Year is required" });
     if (!title) return res.status(400).json({ error: "Title is required" });
     if (!description) return res.status(400).json({ error: "Description is required" });
     const data = await readProjects();
     const idx = data.items.findIndex((p) => p.id === id);
     if (idx === -1) return res.status(404).json({ error: "Not found" });
-    data.items[idx] = { ...data.items[idx], year, title, description, tags, url };
+    data.items[idx] = {
+      ...data.items[idx],
+      year,
+      title,
+      description,
+      details,
+      tags,
+      url,
+      notebook,
+      notebook_html: notebookHtml,
+      notebook_json: notebookJson,
+    };
     await storage.writeProjects(PROJECTS_FILE, data);
     res.json({ project: data.items[idx] });
   } catch (e) {
     next(e);
   }
 });
+
+
 
 app.delete("/api/admin/projects/:id", ...writeGuard, async (req, res, next) => {
   try {

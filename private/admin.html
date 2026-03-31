@@ -136,6 +136,20 @@
               <label for="edit-tags">Tags</label>
               <input type="text" id="edit-tags" maxlength="300" placeholder="Python · Data">
             </div>
+            <div class="admin-field">
+              <label for="edit-details">Details</label>
+              <textarea id="edit-details" maxlength="10000" placeholder="Extended project details, documentation, show notes, and embed links"></textarea>
+            </div>
+            <div class="admin-field">
+              <label for="edit-notebook">Jupyter Notebook URL (optional)</label>
+              <input type="url" id="edit-notebook" maxlength="2000" placeholder="https://nbviewer.org/... or https://...">
+            </div>
+            <div class="admin-field">
+              <label for="edit-notebook-file">Upload .ipynb file</label>
+              <input type="file" id="edit-notebook-file" accept=".ipynb">
+              <div id="notebook-dropzone" class="dropzone">Drop .ipynb here</div>
+              <small>Drop or choose a .ipynb file to convert and embed automatically.</small>
+            </div>
           </div>
         </form>
       </div>

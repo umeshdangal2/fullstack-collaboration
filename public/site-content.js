@@ -74,11 +74,12 @@
                 titleHtml +
                 "</a>"
               : titleHtml;
+          var detailHref = '/project.html?id=' + encodeURIComponent(p.id);
           return (
             '<li class="project-card" data-index="' + index + '">' +
             '<div class="card-top">' +
             '<h3 class="project-title">' +
-            titleInner +
+            '<a href="' + detailHref + '">' + titleInner + '</a>' +
             "</h3>" +
             '<button type="button" class="card-more" aria-label="Project actions" disabled>⋯</button>' +
             '</div>' +
@@ -91,6 +92,7 @@
             '<span class="project-tags">' +
             escapeHtml(p.tags || "") +
             "</span>" +
+            '<a class="project-detail-btn" href="' + detailHref + '">View details</a>' +
             "</li>"
           );
         })

@@ -36,6 +36,9 @@
     var btnSave = document.getElementById("btn-save");
     var btnDelete = document.getElementById("btn-delete");
     var modalCloseButtons = document.querySelectorAll(".modal-close");
+    var notebookFileInput = document.getElementById("edit-notebook-file");
+    var notebookHtmlFromFile = "";
+    var notebookJsonFromFile = null;
 
     console.log('DOM elements found:', {
       loginPanel: !!loginPanel,
@@ -101,6 +104,38 @@
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
+    }
+
+    function convertNotebookToHtml(nbContent) {
+      if (!nbContent || !nbContent.cells || !Array.isArray(nbContent.cells)) return "";
+      var html = "";
+      nbContent.cells.forEach(function (cell) {
+        if (!cell || !cell.cell_type) return;
+        if (cell.cell_type === "markdown") {
+          var text = (cell.source || []).join("");
+          html += '<div class="notebook-cell notebook-cell-markdown">' + escapeHtml(text).replace(/\n/g, "<br>") + "</div>";
+        } else if (cell.cell_type === "code") {
+          var code = (cell.source || []).join("");
+          html += '<div class="notebook-cell notebook-cell-code"><pre><code>' + escapeHtml(code) + "</code></pre>";
+          if (Array.isArray(cell.outputs) && cell.outputs.length) {
+            html += '<div class="notebook-cell-output">';
+            cell.outputs.forEach(function (out) {
+              if (out.text) {
+                html += '<pre>' + escapeHtml((Array.isArray(out.text) ? out.text.join("") : String(out.text))) + '</pre>';
+              }
+              if (out.data && out.data["text/plain"]) {
+                html += '<pre>' + escapeHtml(Array.isArray(out.data["text/plain"]) ? out.data["text/plain"].join("") : String(out.data["text/plain"])) + '</pre>';
+              }
+              if (out.data && out.data["text/html"]) {
+                html += '<div>' + (Array.isArray(out.data["text/html"]) ? out.data["text/html"].join("") : String(out.data["text/html"])) + '</div>';
+              }
+            });
+            html += '</div>';
+          }
+          html += '</div>';
+        }
+      });
+      return '<div class="notebook-embed">' + html + '</div>';
     }
 
     function showDashboard() {
@@ -249,13 +284,21 @@
             document.getElementById("edit-year").value = proj.year || "";
             document.getElementById("edit-project-title").value = proj.title || "";
             document.getElementById("edit-desc").value = proj.description || "";
+            document.getElementById("edit-details").value = proj.details || "";
             document.getElementById("edit-tags").value = proj.tags || "";
             document.getElementById("edit-project-url").value = proj.url || "";
+            document.getElementById("edit-notebook").value = proj.notebook || "";
+            notebookHtmlFromFile = proj.notebook_html || "";
+            notebookJsonFromFile = proj.notebook_json || null;
+            if (notebookFileInput) notebookFileInput.value = "";
             show(btnDelete);
           });
         } else {
           modalTitle.textContent = "Add New Project";
           editForm.reset();
+          notebookHtmlFromFile = "";
+          notebookJsonFromFile = null;
+          if (notebookFileInput) notebookFileInput.value = "";
           hide(btnDelete);
         }
       }
@@ -280,6 +323,78 @@
     }
 
     // Event listeners
+    var notebookDropzone = document.getElementById("notebook-dropzone");
+
+    function loadNotebookFile(file) {
+      if (!file || !file.name.toLowerCase().endsWith(".ipynb")) {
+        show(dashMsg, "admin-msg-error", "Please drop a valid .ipynb file.");
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          var parsed = JSON.parse(e.target.result);
+          notebookJsonFromFile = parsed;
+          notebookHtmlFromFile = convertNotebookToHtml(parsed);
+          document.getElementById("edit-notebook").value = "";
+          show(dashMsg, "admin-msg-success", "Notebook converted and ready to embed.");
+        } catch (ex) {
+          console.error(ex);
+          notebookJsonFromFile = null;
+          notebookHtmlFromFile = "";
+          show(dashMsg, "admin-msg-error", "Could not parse .ipynb file.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    if (notebookFileInput) {
+      notebookFileInput.addEventListener("change", function (event) {
+        var file = event.target.files && event.target.files[0];
+        if (!file) {
+          notebookJsonFromFile = null;
+          notebookHtmlFromFile = "";
+          return;
+        }
+        loadNotebookFile(file);
+      });
+    }
+
+    if (notebookDropzone) {
+      ["dragenter", "dragover"].forEach(function (ev) {
+        notebookDropzone.addEventListener(ev, function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          notebookDropzone.classList.add("dragover");
+        });
+      });
+
+      ["dragleave", "dragend", "drop"].forEach(function (ev) {
+        notebookDropzone.addEventListener(ev, function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          notebookDropzone.classList.remove("dragover");
+        });
+      });
+
+      notebookDropzone.addEventListener("drop", function (event) {
+        var files = event.dataTransfer && event.dataTransfer.files;
+        if (files && files.length > 0) {
+          var file = files[0];
+          if (notebookFileInput) {
+            notebookFileInput.files = files;
+          }
+          loadNotebookFile(file);
+        }
+      });
+
+      notebookDropzone.addEventListener("click", function () {
+        if (notebookFileInput) {
+          notebookFileInput.click();
+        }
+      });
+    }
+
     btnAddBlog.addEventListener("click", function () {
       openModal("blog", null);
     });
@@ -337,8 +452,12 @@
           year: document.getElementById("edit-year").value,
           title: document.getElementById("edit-project-title").value,
           description: document.getElementById("edit-desc").value,
+          details: document.getElementById("edit-details").value,
           tags: document.getElementById("edit-tags").value,
           url: document.getElementById("edit-project-url").value.trim(),
+          notebook: document.getElementById("edit-notebook").value.trim(),
+          notebookHtml: notebookHtmlFromFile || "",
+          notebookJson: notebookJsonFromFile ? JSON.stringify(notebookJsonFromFile) : "",
         });
         var url = id ? "/api/admin/projects/" + encodeURIComponent(id) : "/api/admin/projects";
         var method = id ? "PUT" : "POST";
@@ -347,11 +466,15 @@
           .then(function (r) {
             if (r.status === 401) {
               showLogin();
-              return;
+              throw new Error("unauthorized");
             }
-            if (!r.ok) return r.json().then(function (j) {
-              throw new Error((j && j.error) || "save");
-            });
+            if (!r.ok) {
+              return r.text().then(function (text) {
+                var msg;
+                try { msg = JSON.parse(text).error; } catch { msg = text; }
+                throw new Error(msg || "save");
+              });
+            }
             return r.json();
           })
           .then(function () {
@@ -359,8 +482,9 @@
             closeModal();
             return refreshCards();
           })
-          .catch(function () {
-            show(dashMsg, "admin-msg-error", "Could not save project.");
+          .catch(function (err) {
+            console.error('Project save error:', err);
+            show(dashMsg, "admin-msg-error", "Could not save project: " + (err && err.message ? err.message : "Unknown error"));
           });
       }
     });

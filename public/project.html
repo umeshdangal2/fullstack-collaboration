@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Details — Umesh Dangal</title>
+  <meta name="description" content="Project details and documentation.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/" aria-label="Home">UD</a>
+      <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+        <span class="nav-toggle-bar" aria-hidden="true"></span>
+        <span class="nav-toggle-bar" aria-hidden="true"></span>
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="Primary">
+        <div class="nav-backdrop" aria-hidden="true" tabindex="-1"></div>
+        <ul class="nav-list">
+          <li><a href="/#about">About</a></li>
+          <li><a href="/projects.html">Projects</a></li>
+          <li><a href="/#blog">Blog</a></li>
+          <li><a href="/#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="container reveal" style="padding-top:2rem;">
+    <div id="project-detail" class="project-detail">
+      <p id="project-error" class="section-intro" style="color: var(--text-muted);"></p>
+      <h1 id="project-title" class="section-title"></h1>
+      <p id="project-year" class="project-year"></p>
+      <p id="project-desc" class="project-description"></p>
+      <div id="project-details" class="project-details"></div>
+      <div id="project-links" style="margin-top: 1.5rem;"></div>
+      <div id="project-notebook" style="margin-top: 1.75rem;"></div>
+      <div id="project-images" class="project-images" style="margin-top: 1.75rem;"></div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p class="footer-copy">© <span id="year"></span> Umesh Dangal. Built with care.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    (function() {
+      function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str || '';
+        return div.innerHTML;
+      }
+
+      function convertNotebookToHtml(nbContent) {
+        if (!nbContent || !Array.isArray(nbContent.cells)) return "";
+        var html = "";
+        nbContent.cells.forEach(function (cell) {
+          if (!cell || !cell.cell_type) return;
+          if (cell.cell_type === "markdown") {
+            var text = Array.isArray(cell.source) ? cell.source.join("") : String(cell.source || "");
+            html += '<div class="notebook-cell notebook-cell-markdown">' + escapeHtml(text).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') + '</div>';
+          } else if (cell.cell_type === "code") {
+            var code = Array.isArray(cell.source) ? cell.source.join("") : String(cell.source || "");
+            html += '<div class="notebook-cell notebook-cell-code"><pre><code>' + escapeHtml(code) + '</code></pre>';
+            if (Array.isArray(cell.outputs) && cell.outputs.length) {
+              html += '<div class="notebook-cell-output">';
+              cell.outputs.forEach(function (out) {
+                if (out.text) {
+                  var outText = Array.isArray(out.text) ? out.text.join("") : String(out.text);
+                  html += '<pre>' + escapeHtml(outText) + '</pre>';
+                }
+                if (out.data && out.data['text/plain']) {
+                  var plain = Array.isArray(out.data['text/plain']) ? out.data['text/plain'].join("") : String(out.data['text/plain']);
+                  html += '<pre>' + escapeHtml(plain) + '</pre>';
+                }
+                if (out.data && out.data['text/html']) {
+                  var htmlOut = Array.isArray(out.data['text/html']) ? out.data['text/html'].join("") : String(out.data['text/html']);
+                  html += '<div>' + htmlOut + '</div>';
+                }
+              });
+              html += '</div>';
+            }
+            html += '</div>';
+          }
+        });
+        return '<div class="notebook-embed">' + html + '</div>';
+      }
+
+      function getParam(name) {
+        return new URLSearchParams(window.location.search).get(name);
+      }
+
+      var projectId = getParam('id');
+      if (!projectId) {
+        document.getElementById('project-error').textContent = 'Project not found.';
+        return;
+      }
+
+      fetch('/api/public/content', { credentials: 'same-origin' })
+        .then(function(res) {
+          if (!res.ok) throw new Error('Failed to fetch content');
+          return res.json();
+        })
+        .then(function(data) {
+          var projects = data.projects || [];
+          var project = projects.find(function(p) { return p.id === projectId; });
+          if (!project) {
+            document.getElementById('project-error').textContent = 'Project not found.';
+            return;
+          }
+
+          document.getElementById('project-title').textContent = project.title || 'Untitled';
+          document.getElementById('project-year').textContent = project.year ? 'Year: ' + escapeHtml(project.year) : '';
+          document.getElementById('project-desc').textContent = project.description || '';
+
+          if (project.details) {
+            var detailsEl = document.getElementById('project-details');
+            detailsEl.innerHTML = '<h2>Documentation</h2><p>' + escapeHtml(project.details).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
+          }
+
+          var links = [];
+          if (project.url) {
+            links.push('<a class="btn btn-secondary" href="' + escapeHtml(project.url) + '" target="_blank" rel="noopener noreferrer">Project link</a>');
+          }
+          if (project.notebook) {
+            links.push('<a class="btn btn-secondary" href="' + escapeHtml(project.notebook) + '" target="_blank" rel="noopener noreferrer">Open notebook</a>');
+          }
+          if (links.length > 0) {
+            document.getElementById('project-links').innerHTML = links.join(' ');
+          }
+
+          if (project.url && project.url.match(/\.(png|jpg|jpeg|gif|webp)$/i)) {
+            document.getElementById('project-images').innerHTML = '<img src="' + escapeHtml(project.url) + '" alt="Project image" style="width:100%;max-width:900px;border-radius:12px;">';
+          }
+
+          var notebookHtml = "";
+          if (project.notebook_json) {
+            var notebookJson = project.notebook_json;
+            if (typeof notebookJson === 'string') {
+              try {
+                notebookJson = JSON.parse(notebookJson);
+              } catch (e) {
+                notebookJson = null;
+              }
+            }
+            if (notebookJson) {
+              notebookHtml = convertNotebookToHtml(notebookJson);
+            }
+          }
+
+          if (!notebookHtml && project.notebook_html) {
+            notebookHtml = project.notebook_html;
+          }
+
+          if (notebookHtml) {
+            document.getElementById('project-notebook').innerHTML = '<h2>Notebook</h2>' + notebookHtml;
+          } else if (project.notebook) {
+            document.getElementById('project-notebook').innerHTML = '<h2>Notebook</h2><iframe src="' + escapeHtml(project.notebook) + '" style="width:100%;min-height:800px;border: 1px solid var(--border);border-radius:12px;" frameborder="0" sandbox="allow-forms allow-scripts allow-same-origin allow-popups"></iframe>';
+          }
+        })
+        .catch(function(err) {
+          console.error(err);
+          document.getElementById('project-error').textContent = 'Could not load project details.';
+        });
+    })();
+  </script>
+</body>
+</html>
