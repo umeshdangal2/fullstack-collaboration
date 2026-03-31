@@ -44,6 +44,45 @@
       projectGrid: !!projectGrid
     });
 
+    // Navigation handling
+    var navItems = document.querySelectorAll('.admin-nav-item');
+    navItems.forEach(function(item) {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        var section = this.getAttribute('data-section');
+
+        // Remove active class from all nav items
+        navItems.forEach(function(nav) {
+          nav.classList.remove('active');
+        });
+        // Add active class to clicked item
+        this.classList.add('active');
+
+        // Hide all sections
+        var sections = document.querySelectorAll('.admin-main > div[id]');
+        sections.forEach(function(sec) {
+          sec.classList.add('admin-hidden');
+          var container = sec.querySelector('.container.reveal');
+          if (container) {
+            container.classList.remove('is-visible');
+          }
+        });
+
+        // Show selected section
+        if (section === 'dashboard') {
+          dashboard.classList.remove('admin-hidden');
+          var dashboardContainer = dashboard.querySelector('.container.reveal');
+          if (dashboardContainer) {
+            dashboardContainer.classList.add('is-visible');
+          }
+          // Load content if not already loaded
+          if (!blogGrid.children.length && !projectGrid.children.length) {
+            refreshCards();
+          }
+        }
+      });
+    });
+
     function show(el, cls, text) {
       if (!el) return;
       if (text != null) el.textContent = text;
@@ -116,7 +155,7 @@
         .map(function (p) {
           return (
             '<li class="admin-card" data-id="' + escapeHtml(p.id) + '">' +
-            '<button type="button" class="admin-card-edit-btn" data-blog-edit="' + escapeHtml(p.id) + '">⋯</button>' +
+            '<button type="button" class="admin-card-edit-btn" data-blog-edit="' + escapeHtml(p.id) + '" title="Edit blog post">⋯</button>' +
             '<h3 class="admin-card-title">' + escapeHtml(p.title || "") + '</h3>' +
             '<p class="admin-card-date">' + escapeHtml(p.date || "") + '</p>' +
             '<p class="admin-card-desc">' + escapeHtml(p.excerpt || "").substring(0, 100) + '...</p>' +
@@ -128,6 +167,8 @@
         })
         .join("");
       console.log('Blog grid HTML set, length:', blogGrid.innerHTML.length);
+      // Reattach listeners after rendering
+      attachCardListeners();
     }
 
     function renderProjectCards(projects) {
@@ -140,7 +181,7 @@
         .map(function (p) {
           return (
             '<li class="admin-card" data-id="' + escapeHtml(p.id) + '">' +
-            '<button type="button" class="admin-card-edit-btn" data-project-edit="' + escapeHtml(p.id) + '">⋯</button>' +
+            '<button type="button" class="admin-card-edit-btn" data-project-edit="' + escapeHtml(p.id) + '" title="Edit project">⋯</button>' +
             '<h3 class="admin-card-title">' + escapeHtml(p.title || "") + '</h3>' +
             '<p class="admin-card-date">' + escapeHtml(p.year || "") + '</p>' +
             '<p class="admin-card-desc">' + escapeHtml(p.description || "").substring(0, 100) + '...</p>' +
@@ -150,6 +191,8 @@
         })
         .join("");
       console.log('Project grid HTML set, length:', projectGrid.innerHTML.length);
+      // Reattach listeners after rendering
+      attachCardListeners();
     }
 
     function refreshCards() {
@@ -160,7 +203,6 @@
           renderBlogCards(data.blog);
           renderProjectCards(data.projects);
           hide(dashMsg);
-          attachCardListeners();
         })
         .catch(function (e) {
           console.error('Error loading content:', e);

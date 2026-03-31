@@ -31,6 +31,14 @@
       "description": "apple is a fruit, eat it and keep doctors away",
       "tags": "apple tree",
       "url": ""
+    },
+    {
+      "id": "00fa6906-3e14-4b85-9bc2-36849606ce40",
+      "year": "2026",
+      "title": "Sparky",
+      "description": "Sparky is a powerful troop in Clash Royale that throws a powerful spark of electricity to the enemy that vaporizes the enemy within a fraction of a second.",
+      "tags": "CR",
+      "url": ""
     }
   ]
 }

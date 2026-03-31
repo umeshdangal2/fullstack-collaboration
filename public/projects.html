@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projects — Umesh Dangal</title>
+  <meta name="description" content="Portfolio projects — case studies and experiments.">
+  <meta name="theme-color" content="#f7f4ec">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/" aria-label="Home">UD</a>
+      <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+        <span class="nav-toggle-bar" aria-hidden="true"></span>
+        <span class="nav-toggle-bar" aria-hidden="true"></span>
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="Primary">
+        <div class="nav-backdrop" aria-hidden="true" tabindex="-1"></div>
+        <ul class="nav-list">
+          <li><a href="/#about">About</a></li>
+          <li><a href="/projects.html">Projects</a></li>
+          <li><a href="/#blog">Blog</a></li>
+          <li><a href="/#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="projects-hero section">
+      <div class="container reveal">
+        <h1 class="section-title">Projects</h1>
+        <p class="section-intro">Selected work — case studies and experiments.</p>
+      </div>
+    </section>
+
+    <section class="projects-grid section">
+      <div class="container reveal">
+        <ul id="all-projects-list" class="projects-full-list"></ul>
+      </div>
+    </section>
+
+    <section id="contact" class="contact section">
+      <div class="container narrow reveal">
+        <h2 class="section-title">Contact</h2>
+        <p class="contact-lead">Say hello for collaborations, speaking, or a coffee chat, I usually reply within hours.</p>
+        <p class="contact-email"><a href="mailto:umeshdangal2@gmail.com">umeshdangal2@gmail.com</a></p>
+        <ul class="contact-links">
+          <li><a href="https://www.linkedin.com/in/umesh-dangal-606bb9292/" rel="noopener noreferrer">LinkedIn</a></li>
+          <li><a href="https://github.com/umeshdangal2" rel="noopener noreferrer">GitHub</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p class="footer-copy">© <span id="year"></span> Umesh Dangal. Built with care.</p>
+    </div>
+  </footer>
+
+  <script src="site-content.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Populate full projects list on projects page
+    (function() {
+      var projectsList = document.getElementById('all-projects-list');
+      if (projectsList) {
+        fetch('/api/public/content', { credentials: 'same-origin' })
+          .then(function(response) { 
+            if (!response.ok) throw new Error('Failed to load projects');
+            return response.json(); 
+          })
+          .then(function(data) {
+            var projects = data.projects || [];
+            if (!Array.isArray(projects) || projects.length === 0) {
+              projectsList.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">No projects yet — check back soon.</p>';
+              return;
+            }
+            
+            projectsList.innerHTML = projects.map(function(project) {
+              return '<li class="project-full-card">' +
+                '<div class="project-card-content">' +
+                '<h3 class="project-title">' + escapeHtml(project.title || '') + '</h3>' +
+                '<p class="project-year">' + escapeHtml(project.year || '') + '</p>' +
+                '<p class="project-description">' + escapeHtml(project.description || '') + '</p>' +
+                (project.tags ? '<p class="project-tags">' + escapeHtml(project.tags) + '</p>' : '') +
+                (project.url && project.url.trim() ? '<a href="' + escapeHtml(project.url) + '" class="project-link" target="_blank" rel="noopener noreferrer">View project →</a>' : '') +
+                '</div>' +
+                '</li>';
+            }).join('');
+          })
+          .catch(function(err) {
+            console.error('Failed to load projects:', err);
+            projectsList.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">Unable to load projects at this time.</p>';
+          });
+      }
+
+      function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -24,6 +24,22 @@
     });
   }
 
+  function getLikeCount(postId) {
+    return Number(localStorage.getItem('like-count-' + postId) || 0);
+  }
+
+  function setLikeCount(postId, count) {
+    localStorage.setItem('like-count-' + postId, String(Math.max(0, Math.floor(count))));
+  }
+
+  function getCommentCount(postId) {
+    return Number(localStorage.getItem('comment-count-' + postId) || 0);
+  }
+
+  function setCommentCount(postId, count) {
+    localStorage.setItem('comment-count-' + postId, String(Math.max(0, Math.floor(count))));
+  }
+
   var projectList = document.getElementById("project-list");
   var blogList = document.getElementById("blog-list");
   var projectsStatus = document.getElementById("projects-status");
@@ -96,6 +112,9 @@
               '" decoding="async"></figure>'
             : "";
           var postId = 'blog-' + index;
+          var likeCount = getLikeCount(postId);
+          var commentCount = getCommentCount(postId);
+          var userLiked = Boolean(localStorage.getItem('liked-' + postId));
           return (
             '<li class="blog-item" data-index="' + index + '" id="' + postId + '">' +
             '<div class="card-top">' +
@@ -116,8 +135,8 @@
             "</p>" +
             imgBlock +
             '<div class="social-bar">' +
-            '<button type="button" class="social-like" data-post="' + postId + '">👍 Like</button>' +
-            '<button type="button" class="social-comment" data-post="' + postId + '">💬 Comment</button>' +
+            '<button type="button" class="social-like ' + (userLiked ? 'liked' : '') + '" data-post="' + postId + '">👍 ' + (userLiked ? 'Liked' : 'Like') + ' (' + likeCount + ')</button>' +
+            '<button type="button" class="social-comment" data-post="' + postId + '">💬 Comment (' + commentCount + ')</button>' +
             '<button type="button" class="social-share" data-post="' + postId + '">📤 Share</button>' +
             '</div>' +
             '<div class="comment-section" id="comments-' + postId + '" style="display:none;">' +
@@ -141,47 +160,51 @@
         var carousel = document.querySelector(".project-carousel");
         if (!carousel) return;
 
-        var cards = carousel.querySelectorAll(".project-card");
+        var projectList = carousel.querySelector(".project-list");
+        if (!projectList) return;
+
+        var cards = projectList.querySelectorAll(".project-card");
         if (!cards.length || cards.length < 2) return;
 
-        // Add controls
-        var controls = document.createElement("div");
-        controls.className = "carousel-controls";
-        controls.innerHTML = '<button class="carousel-prev" aria-label="Previous">‹</button>' +
-                             '<div class="carousel-dots"></div>' +
-                             '<button class="carousel-next" aria-label="Next">›</button>';
-        carousel.appendChild(controls);
-
-        var dotsContainer = controls.querySelector(".carousel-dots");
-        cards.forEach(function (_, index) {
-          var dot = document.createElement("button");
-          dot.className = "carousel-dot";
-          dot.setAttribute("data-index", index);
-          dot.setAttribute("aria-label", "Go to slide " + (index + 1));
-          dotsContainer.appendChild(dot);
-        });
-
-        var current = 0;
+        var cardWidth = cards[0].offsetWidth + 15; // Include gap
+        var totalCards = cards.length;
+        var currentIndex = 0;
+        var isAutoPlay = true;
         var timer = null;
 
-        function goTo(index) {
-          var card = cards[index];
-          if (!card) return;
-          carousel.scrollTo({
-            left: card.offsetLeft - 8,
-            behavior: "smooth",
-          });
-          // Update dots
-          dotsContainer.querySelectorAll(".carousel-dot").forEach(function (d, i) {
-            d.classList.toggle("active", i === index);
-          });
+        // Clone all cards and append to create infinite effect
+        cards.forEach(function(card) {
+          var clonedCard = card.cloneNode(true);
+          projectList.appendChild(clonedCard);
+        });
+
+        // Add additional clones for smooth looping
+        cards.forEach(function(card) {
+          var clonedCard = card.cloneNode(true);
+          projectList.appendChild(clonedCard);
+        });
+
+        function updateSlide() {
+          var scrollAmount = currentIndex * cardWidth;
+          projectList.style.transition = 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+          projectList.style.transform = 'translateX(-' + scrollAmount + 'px)';
+
+          // Reset seamlessly when wrapping around
+          if (currentIndex === totalCards) {
+            setTimeout(function() {
+              projectList.style.transition = 'none';
+              currentIndex = 0;
+              projectList.style.transform = 'translateX(0)';
+            }, 1200);
+          }
         }
 
         function start() {
-          timer = setInterval(function () {
-            current = (current + 1) % cards.length;
-            goTo(current);
-          }, 6000);
+          timer = setInterval(function() {
+            if (!isAutoPlay) return;
+            currentIndex++;
+            updateSlide();
+          }, 5000);
         }
 
         function stop() {
@@ -206,14 +229,19 @@
         if (button.matches(".social-like")) {
           var postId = button.getAttribute("data-post");
           var likedKey = "liked-" + postId;
+          var likeCountKey = "like-count-" + postId;
+          var currentCount = getLikeCount(postId);
+
           if (localStorage.getItem(likedKey)) {
             localStorage.removeItem(likedKey);
+            setLikeCount(postId, Math.max(0, currentCount - 1));
             button.classList.remove("liked");
-            button.textContent = "👍";
+            button.textContent = "👍 Like (" + getLikeCount(postId) + ")";
           } else {
             localStorage.setItem(likedKey, "true");
+            setLikeCount(postId, currentCount + 1);
             button.classList.add("liked");
-            button.textContent = "👍 Liked";
+            button.textContent = "👍 Liked (" + getLikeCount(postId) + ")";
           }
           return;
         }
@@ -252,39 +280,17 @@
             commentEl.innerHTML = '<div class="comment-avatar">👤</div><div class="comment-body"><div class="comment-user">userunknown</div><div class="comment-text">' + escapeHtml(comment) + '</div></div>';
             list.appendChild(commentEl);
             input.value = "";
-          }
-          return;
-        }
 
-        // Carousel controls
-        if (button.matches(".carousel-prev")) {
-          var carousel = document.querySelector(".project-carousel");
-          var cards = carousel.querySelectorAll(".project-card");
-          if (cards.length) {
-            var current = Math.floor(carousel.scrollLeft / cards[0].offsetWidth);
-            var next = current > 0 ? current - 1 : cards.length - 1;
-            carousel.scrollTo({ left: cards[next].offsetLeft - 8, behavior: "smooth" });
-          }
-          return;
-        }
-
-        if (button.matches(".carousel-next")) {
-          var carousel = document.querySelector(".project-carousel");
-          var cards = carousel.querySelectorAll(".project-card");
-          if (cards.length) {
-            var current = Math.floor(carousel.scrollLeft / cards[0].offsetWidth);
-            var next = current < cards.length - 1 ? current + 1 : 0;
-            carousel.scrollTo({ left: cards[next].offsetLeft - 8, behavior: "smooth" });
-          }
-          return;
-        }
-
-        if (button.matches(".carousel-dot")) {
-          var index = parseInt(button.getAttribute("data-index"));
-          var carousel = document.querySelector(".project-carousel");
-          var cards = carousel.querySelectorAll(".project-card");
-          if (cards[index]) {
-            carousel.scrollTo({ left: cards[index].offsetLeft - 8, behavior: "smooth" });
+            var container = button.closest('.blog-item');
+            if (container) {
+              var postId = container.id;
+              var newCommentCount = getCommentCount(postId) + 1;
+              setCommentCount(postId, newCommentCount);
+              var commentButton = document.querySelector('.social-comment[data-post="' + postId + '"]');
+              if (commentButton) {
+                commentButton.textContent = '💬 Comment (' + newCommentCount + ')';
+              }
+            }
           }
           return;
         }
