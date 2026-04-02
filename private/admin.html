@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
+  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 </head>
 <body class="admin-page">
   <header class="site-header admin-header">
@@ -138,7 +139,26 @@
             </div>
             <div class="admin-field">
               <label for="edit-details">Details</label>
-              <textarea id="edit-details" maxlength="10000" placeholder="Extended project details, documentation, show notes, and embed links"></textarea>
+              <div id="edit-details-toolbar">
+                <button class="ql-bold" type="button" aria-label="Bold"></button>
+                <button class="ql-italic" type="button" aria-label="Italic"></button>
+                <button class="ql-underline" type="button" aria-label="Underline"></button>
+                <button class="ql-list" value="ordered" type="button" aria-label="Ordered list"></button>
+                <button class="ql-list" value="bullet" type="button" aria-label="Bullet list"></button>
+                <select class="ql-size" aria-label="Font size">
+                  <option value="small"></option>
+                  <option selected></option>
+                  <option value="large"></option>
+                  <option value="huge"></option>
+                </select>
+                <select class="ql-font" aria-label="Font family">
+                  <option selected></option>
+                  <option value="serif"></option>
+                  <option value="monospace"></option>
+                </select>
+              </div>
+              <div id="edit-details-editor" class="rich-editor"></div>
+              <textarea id="edit-details" class="admin-hidden" maxlength="10000" placeholder="Extended project details, documentation, show notes, and embed links"></textarea>
             </div>
             <div class="admin-field">
               <label for="edit-notebook">Jupyter Notebook URL (optional)</label>
@@ -161,6 +181,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
   <script src="/admin.js" defer></script>
 </body>
 </html>

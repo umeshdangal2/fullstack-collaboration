@@ -60,6 +60,65 @@
         return div.innerHTML;
       }
 
+      function renderMarkdown(markdown) {
+        var md = String(markdown || '');
+
+        // Code fences (```)
+        md = md.replace(/```([\s\S]*?)```/g, function(match, code) {
+          return '<pre class="notebook-code-block"><code>' + escapeHtml(code) + '</code></pre>';
+        });
+
+        // Normalize line endings
+        md = md.replace(/\r\n?/g, '\n');
+
+        // Headings
+        md = md.replace(/^######\s+(.*)$/gm, '<h6>$1</h6>');
+        md = md.replace(/^#####\s+(.*)$/gm, '<h5>$1</h5>');
+        md = md.replace(/^####\s+(.*)$/gm, '<h4>$1</h4>');
+        md = md.replace(/^###\s+(.*)$/gm, '<h3>$1</h3>');
+        md = md.replace(/^##\s+(.*)$/gm, '<h2>$1</h2>');
+        md = md.replace(/^#\s+(.*)$/gm, '<h1>$1</h1>');
+
+        // Blockquotes
+        md = md.replace(/^>\s?(.*)$/gm, '<blockquote>$1</blockquote>');
+
+        // Unordered lists (simple)
+        md = md.replace(/(^|\n)(?:[-*+]\s+.*(?:\n[-*+]\s+.*)*)/g, function(match) {
+          if (/^[-*+]/m.test(match.trim())) {
+            var items = match.trim().split(/\n/).map(function(item) {
+              return '<li>' + item.replace(/^[-*+]\s+/, '') + '</li>';
+            });
+            return (match.startsWith('\n') ? '\n' : '') + '<ul>' + items.join('') + '</ul>';
+          }
+          return match;
+        });
+
+        // Inline code, bold, italic
+        md = md.replace(/`([^`]+)`/g, '<code>$1</code>');
+        md = md.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        md = md.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        md = md.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+        md = md.replace(/_([^_]+)_/g, '<em>$1</em>');
+
+        // Links [text](url)
+        md = md.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+        // Paragraphs + line breaks
+        var blocks = md.split(/\n{2,}/);
+        md = blocks
+          .map(function(block) {
+            var trimmed = block.trim();
+            if (!trimmed) return '';
+            if (/^(<h[1-6]|<ul|<pre|<blockquote)/.test(trimmed)) {
+              return trimmed;
+            }
+            return '<p>' + trimmed.replace(/\n/g, '<br>') + '</p>';
+          })
+          .join('');
+
+        return md;
+      }
+
       function convertNotebookToHtml(nbContent) {
         if (!nbContent || !Array.isArray(nbContent.cells)) return "";
         var html = "";
@@ -67,24 +126,44 @@
           if (!cell || !cell.cell_type) return;
           if (cell.cell_type === "markdown") {
             var text = Array.isArray(cell.source) ? cell.source.join("") : String(cell.source || "");
-            html += '<div class="notebook-cell notebook-cell-markdown">' + escapeHtml(text).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') + '</div>';
+            html += '<div class="notebook-cell notebook-cell-markdown">' + renderMarkdown(text) + '</div>';
           } else if (cell.cell_type === "code") {
             var code = Array.isArray(cell.source) ? cell.source.join("") : String(cell.source || "");
             html += '<div class="notebook-cell notebook-cell-code"><pre><code>' + escapeHtml(code) + '</code></pre>';
             if (Array.isArray(cell.outputs) && cell.outputs.length) {
               html += '<div class="notebook-cell-output">';
               cell.outputs.forEach(function (out) {
-                if (out.text) {
+                var outputHtml = '';
+                if (out.output_type === 'stream' && out.text) {
                   var outText = Array.isArray(out.text) ? out.text.join("") : String(out.text);
-                  html += '<pre>' + escapeHtml(outText) + '</pre>';
+                  outputHtml += '<pre>' + escapeHtml(outText) + '</pre>';
                 }
-                if (out.data && out.data['text/plain']) {
-                  var plain = Array.isArray(out.data['text/plain']) ? out.data['text/plain'].join("") : String(out.data['text/plain']);
-                  html += '<pre>' + escapeHtml(plain) + '</pre>';
+                if ((out.output_type === 'display_data' || out.output_type === 'execute_result' || out.output_type === 'error') && out.data) {
+                  if (out.data['text/plain']) {
+                    var plain = Array.isArray(out.data['text/plain']) ? out.data['text/plain'].join("") : String(out.data['text/plain']);
+                    outputHtml += '<pre>' + escapeHtml(plain) + '</pre>';
+                  }
+                  if (out.data['text/markdown']) {
+                    var md = Array.isArray(out.data['text/markdown']) ? out.data['text/markdown'].join("") : String(out.data['text/markdown']);
+                    outputHtml += '<div class="notebook-cell-markdown">' + renderMarkdown(md) + '</div>';
+                  }
+                  if (out.data['text/html']) {
+                    var htmlOut = Array.isArray(out.data['text/html']) ? out.data['text/html'].join("") : String(out.data['text/html']);
+                    outputHtml += '<div class="notebook-cell-html">' + htmlOut + '</div>';
+                  }
+                  if (out.data['image/png']) {
+                    outputHtml += '<img class="notebook-image" src="data:image/png;base64,' + out.data['image/png'] + '" alt="Notebook visualization">';
+                  }
+                  if (out.data['image/jpeg']) {
+                    outputHtml += '<img class="notebook-image" src="data:image/jpeg;base64,' + out.data['image/jpeg'] + '" alt="Notebook visualization">';
+                  }
+                  if (out.data['image/svg+xml']) {
+                    var svg = Array.isArray(out.data['image/svg+xml']) ? out.data['image/svg+xml'].join('') : String(out.data['image/svg+xml']);
+                    outputHtml += '<div class="notebook-image-svg">' + svg + '</div>';
+                  }
                 }
-                if (out.data && out.data['text/html']) {
-                  var htmlOut = Array.isArray(out.data['text/html']) ? out.data['text/html'].join("") : String(out.data['text/html']);
-                  html += '<div>' + htmlOut + '</div>';
+                if (outputHtml) {
+                  html += outputHtml;
                 }
               });
               html += '</div>';
@@ -124,7 +203,12 @@
 
           if (project.details) {
             var detailsEl = document.getElementById('project-details');
-            detailsEl.innerHTML = '<h2>Documentation</h2><p>' + escapeHtml(project.details).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
+            var detailsText = String(project.details || '').trim();
+            if (detailsText.startsWith('<') && detailsText.endsWith('>')) {
+              detailsEl.innerHTML = '<h2>Documentation</h2>' + detailsText;
+            } else {
+              detailsEl.innerHTML = '<h2>Documentation</h2>' + renderMarkdown(project.details);
+            }
           }
 
           var links = [];
@@ -142,7 +226,11 @@
             document.getElementById('project-images').innerHTML = '<img src="' + escapeHtml(project.url) + '" alt="Project image" style="width:100%;max-width:900px;border-radius:12px;">';
           }
 
-          var notebookHtml = "";
+          function insertNotebookSection(htmlContent) {
+            document.getElementById('project-notebook').innerHTML = '<h2>Notebook</h2>' + htmlContent;
+          }
+
+          var notebookHtml = '';
           if (project.notebook_json) {
             var notebookJson = project.notebook_json;
             if (typeof notebookJson === 'string') {
@@ -162,9 +250,30 @@
           }
 
           if (notebookHtml) {
-            document.getElementById('project-notebook').innerHTML = '<h2>Notebook</h2>' + notebookHtml;
+            insertNotebookSection(notebookHtml);
+          } else if (project.notebook && project.notebook.match(/\.ipynb$/i)) {
+            document.getElementById('project-notebook').innerHTML = '<h2>Notebook</h2><p class="project-note">Loading notebook preview...</p>';
+            fetch(project.notebook)
+              .then(function (res) {
+                if (!res.ok) throw new Error('Failed to load notebook');
+                return res.json();
+              })
+              .then(function (nb) {
+                var html = convertNotebookToHtml(nb);
+                if (html) {
+                  insertNotebookSection(html);
+                } else {
+                  document.getElementById('project-notebook').innerHTML = '<h2>Notebook</h2><p class="project-note">Notebook content unavailable.</p>';
+                }
+              })
+              .catch(function (err) {
+                console.error(err);
+                document.getElementById('project-notebook').innerHTML = '<h2>Notebook</h2><p class="project-note">Unable to render notebook. Opening in full JupyterLab view.</p><iframe src="' + escapeHtml(project.notebook) + '" style="width:100%;min-height:800px;border: 1px solid var(--border);border-radius:12px;" frameborder="0" sandbox="allow-forms allow-scripts allow-same-origin allow-popups"></iframe>';
+              });
           } else if (project.notebook) {
-            document.getElementById('project-notebook').innerHTML = '<h2>Notebook</h2><iframe src="' + escapeHtml(project.notebook) + '" style="width:100%;min-height:800px;border: 1px solid var(--border);border-radius:12px;" frameborder="0" sandbox="allow-forms allow-scripts allow-same-origin allow-popups"></iframe>';
+            insertNotebookSection('<iframe src="' + escapeHtml(project.notebook) + '" style="width:100%;min-height:800px;border:1px solid var(--border);border-radius:12px;" frameborder="0" sandbox="allow-forms allow-scripts allow-same-origin allow-popups"></iframe>');
+          } else {
+            document.getElementById('project-notebook').innerHTML = '<h2>Notebook</h2><p class="project-note">No notebook available for this project.</p>';
           }
         })
         .catch(function(err) {

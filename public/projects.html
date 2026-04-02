@@ -86,16 +86,24 @@
             }
             
             projectsList.innerHTML = projects.map(function(project) {
-              return '<li class="project-full-card">' +
+              var detailHref = '/project.html?id=' + encodeURIComponent(project.id);
+              return '<li class="project-full-card" data-href="' + detailHref + '">' +
                 '<div class="project-card-content">' +
                 '<h3 class="project-title">' + escapeHtml(project.title || '') + '</h3>' +
                 '<p class="project-year">' + escapeHtml(project.year || '') + '</p>' +
                 '<p class="project-description">' + escapeHtml(project.description || '') + '</p>' +
                 (project.tags ? '<p class="project-tags">' + escapeHtml(project.tags) + '</p>' : '') +
-                (project.url && project.url.trim() ? '<a href="' + escapeHtml(project.url) + '" class="project-link" target="_blank" rel="noopener noreferrer">View project →</a>' : '') +
                 '</div>' +
                 '</li>';
             }).join('');
+
+            // Add click event listeners to make cards clickable
+            projectsList.querySelectorAll('.project-full-card').forEach(function(card) {
+              card.style.cursor = 'pointer';
+              card.addEventListener('click', function() {
+                window.location.href = this.dataset.href;
+              });
+            });
           })
           .catch(function(err) {
             console.error('Failed to load projects:', err);

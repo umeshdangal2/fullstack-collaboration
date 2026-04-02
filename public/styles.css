@@ -518,6 +518,30 @@ a:hover {
   transition: border-color 0.3s var(--ease-out), transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out);
 }
 
+.project-details {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.project-details h2 {
+  margin-top: 0;
+  font-size: 1.3rem;
+  color: var(--text);
+}
+
+.project-details p,
+.project-details ul,
+.project-details ol,
+.project-details blockquote {
+  margin: 0.5rem 0;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+
 .project-card:hover {
   border-color: rgba(0, 111, 185, 0.35);
   transform: translateY(-2px);
@@ -978,6 +1002,157 @@ a:hover {
   font-weight: 600;
   color: var(--text);
 }
+
+.project-note {
+  color: var(--text-muted);
+  margin: 0.5rem 0 1rem;
+}
+
+.rich-editor {
+  min-height: 200px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+#edit-details-toolbar {
+  margin-bottom: 0.5rem;
+}
+
+.notebook-embed {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+}
+
+.notebook-cell {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.notebook-cell-markdown p {
+  margin: 0 0 0.75rem;
+}
+
+.notebook-cell-markdown h1,
+.notebook-cell-markdown h2,
+.notebook-cell-markdown h3,
+.notebook-cell-markdown h4,
+.notebook-cell-markdown h5,
+.notebook-cell-markdown h6 {
+  margin: 1rem 0 0.5rem;
+  color: var(--text);
+}
+
+.notebook-cell-code pre,
+.notebook-code-block {
+  background: #0e0f14;
+  border: 1px solid #252a34;
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 4px 8px rgba(0,0,0,0.22);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.notebook-cell-output,
+.notebook-cell-output pre {
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  padding: 0.75rem !important;
+  margin: 0.5rem 0 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  color: var(--text) !important;
+  text-rendering: optimizeLegibility !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+.notebook-cell-output pre::before,
+.notebook-cell-output pre::after {
+  display: none !important;
+  content: none !important;
+}
+
+.notebook-cell-output pre code {
+  color: var(--text) !important;
+  font-family: "Fira Code", "Courier New", monospace !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.notebook-cell-output .notebook-code-block,
+.notebook-cell-output .notebook-cell-code pre {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--text);
+  font-family: "Fira Code", "Courier New", monospace;
+}
+
+.notebook-cell-code pre code,
+.notebook-code-block code {
+  font-family: "Fira Code", "Courier New", monospace;
+  font-size: 0.95rem;
+  color: #e6e8fa;
+  line-height: 1.55;
+  white-space: pre;
+}
+
+.notebook-cell-code pre,
+.notebook-code-block {
+  color: #e6e8fa;
+}
+
+.notebook-cell-code pre {
+  position: relative;
+}
+
+.notebook-cell-code pre::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #09f, #00d8ff, #b54aff);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.notebook-cell-output {
+  border-top: 1px solid var(--border);
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.notebook-image,
+.notebook-image-svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 0.75rem 0;
+  border-radius: 8px;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.1);
+}
+
+.notebook-cell-html {
+  margin: 0.5rem 0;
+}
+
 
 .project-year {
   margin: 0;

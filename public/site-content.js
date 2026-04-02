@@ -76,10 +76,10 @@
               : titleHtml;
           var detailHref = '/project.html?id=' + encodeURIComponent(p.id);
           return (
-            '<li class="project-card" data-index="' + index + '">' +
+            '<li class="project-card" data-index="' + index + '" data-href="' + detailHref + '">' +
             '<div class="card-top">' +
             '<h3 class="project-title">' +
-            '<a href="' + detailHref + '">' + titleInner + '</a>' +
+            titleInner +
             "</h3>" +
             '<button type="button" class="card-more" aria-label="Project actions" disabled>⋯</button>' +
             '</div>' +
@@ -92,11 +92,17 @@
             '<span class="project-tags">' +
             escapeHtml(p.tags || "") +
             "</span>" +
-            '<a class="project-detail-btn" href="' + detailHref + '">View details</a>' +
             "</li>"
           );
         })
         .join("");
+
+      projectList.querySelectorAll('.project-card').forEach(function(card) {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', function() {
+          window.location.href = this.dataset.href;
+        });
+      });
 
       blogList.innerHTML = blog
         .map(function (post, index) {

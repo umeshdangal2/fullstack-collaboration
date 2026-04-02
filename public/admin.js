@@ -33,12 +33,23 @@
     var editId = document.getElementById("edit-id");
     var blogFields = document.getElementById("blog-fields");
     var projectFields = document.getElementById("project-fields");
+    var quillDetails = null;
     var btnSave = document.getElementById("btn-save");
     var btnDelete = document.getElementById("btn-delete");
     var modalCloseButtons = document.querySelectorAll(".modal-close");
     var notebookFileInput = document.getElementById("edit-notebook-file");
     var notebookHtmlFromFile = "";
     var notebookJsonFromFile = null;
+    var editDetailsEditor = document.getElementById("edit-details-editor");
+
+    if (editDetailsEditor && window.Quill) {
+      quillDetails = new Quill(editDetailsEditor, {
+        theme: 'snow',
+        modules: {
+          toolbar: '#edit-details-toolbar'
+        }
+      });
+    }
 
     console.log('DOM elements found:', {
       loginPanel: !!loginPanel,
@@ -284,7 +295,11 @@
             document.getElementById("edit-year").value = proj.year || "";
             document.getElementById("edit-project-title").value = proj.title || "";
             document.getElementById("edit-desc").value = proj.description || "";
-            document.getElementById("edit-details").value = proj.details || "";
+            if (quillDetails) {
+              quillDetails.root.innerHTML = proj.details || "";
+            } else {
+              document.getElementById("edit-details").value = proj.details || "";
+            }
             document.getElementById("edit-tags").value = proj.tags || "";
             document.getElementById("edit-project-url").value = proj.url || "";
             document.getElementById("edit-notebook").value = proj.notebook || "";
@@ -299,6 +314,7 @@
           notebookHtmlFromFile = "";
           notebookJsonFromFile = null;
           if (notebookFileInput) notebookFileInput.value = "";
+          if (quillDetails) quillDetails.root.innerHTML = "";
           hide(btnDelete);
         }
       }
@@ -448,11 +464,12 @@
             show(dashMsg, "admin-msg-error", "Could not save blog.");
           });
       } else {
+        var detailsContent = quillDetails ? quillDetails.root.innerHTML : document.getElementById("edit-details").value;
         var body = JSON.stringify({
           year: document.getElementById("edit-year").value,
           title: document.getElementById("edit-project-title").value,
           description: document.getElementById("edit-desc").value,
-          details: document.getElementById("edit-details").value,
+          details: detailsContent,
           tags: document.getElementById("edit-tags").value,
           url: document.getElementById("edit-project-url").value.trim(),
           notebook: document.getElementById("edit-notebook").value.trim(),
