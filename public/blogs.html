@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog — Umesh Dangal</title>
+  <meta name="description" content="Blog posts, articles, and thoughts.">
+  <meta name="theme-color" content="#f0fafb">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/" aria-label="Home">UD</a>
+      <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+        <span class="nav-toggle-bar" aria-hidden="true"></span>
+        <span class="nav-toggle-bar" aria-hidden="true"></span>
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="Primary">
+        <div class="nav-backdrop" aria-hidden="true" tabindex="-1"></div>
+        <ul class="nav-list">
+          <li><a href="/#about">About</a></li>
+          <li><a href="/projects.html">Projects</a></li>
+          <li><a href="/blogs.html">Blog</a></li>
+          <li><a href="/#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="blog-hero section">
+      <div class="container reveal">
+        <h1 class="section-title">Blog</h1>
+        <p class="section-intro">Notes, updates, and things I'm learning.</p>
+      </div>
+    </section>
+
+    <section class="blog-feed section">
+      <div class="container">
+        <p id="blog-status" class="section-intro admin-hidden" aria-live="polite"></p>
+        <ul id="full-blog-list" class="blog-list"></ul>
+      </div>
+    </section>
+
+    <section id="contact" class="contact section">
+      <div class="container narrow reveal">
+        <h2 class="section-title">Contact</h2>
+        <p class="contact-lead">Say hello for collaborations, speaking, or a coffee chat, I usually reply within hours.</p>
+        <p class="contact-email"><a href="mailto:umeshdangal2@gmail.com">umeshdangal2@gmail.com</a></p>
+        <ul class="contact-links">
+          <li><a href="https://www.linkedin.com/in/umesh-dangal-606bb9292/" rel="noopener noreferrer">LinkedIn</a></li>
+          <li><a href="https://github.com/umeshdangal2" rel="noopener noreferrer">GitHub</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p class="footer-copy">© <span id="year"></span> Umesh Dangal. Built with care.</p>
+    </div>
+  </footer>
+
+  <script src="site-content.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Populate full blogs list on blogs page
+    (function() {
+      var blogsList = document.getElementById('full-blog-list');
+      var blogStatus = document.getElementById('blog-status');
+      if (blogsList) {
+        fetch('/api/public/content', { credentials: 'same-origin' })
+          .then(function(response) { 
+            if (!response.ok) throw new Error('Failed to load blogs');
+            return response.json(); 
+          })
+          .then(function(data) {
+            var blog = data.blog || [];
+            
+            function showStatus(el, text, isError) {
+              if (!el) return;
+              el.textContent = text;
+              el.classList.remove("admin-hidden");
+              el.style.color = isError ? "#6b2d2d" : "";
+            }
+
+            function escapeHtml(s) {
+              return String(s)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+            }
+
+            function formatBlogDate(iso) {
+              if (!iso || typeof iso !== "string") return "";
+              var parts = iso.split("-");
+              if (parts.length !== 3) return escapeHtml(iso);
+              var y = Number(parts[0]);
+              var m = Number(parts[1]) - 1;
+              var d = Number(parts[2]);
+              var dt = new Date(Date.UTC(y, m, d));
+              if (isNaN(dt.getTime())) return escapeHtml(iso);
+              return dt.toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                timeZone: "UTC",
+              });
+            }
+
+            if (!Array.isArray(blog) || blog.length === 0) {
+              showStatus(blogStatus, "No blog posts yet — check back soon.", false);
+              return;
+            }
+
+            // Fetch social counts
+            return fetch('/api/public/social', { credentials: 'same-origin' })
+              .then(function(r) {
+                if (!r.ok) throw new Error('social');
+                return r.json();
+              })
+              .catch(function() {
+                return { posts: {} };
+              })
+              .then(function(social) {
+                var likesByPost = {};
+                var commentCountsByPost = {};
+
+                Object.entries(social.posts || {}).forEach(function(_a) {
+                  var postId = _a[0];
+                  var info = _a[1];
+                  likesByPost[postId] = Number(info.likes || 0);
+                  commentCountsByPost[postId] = Number(info.commentCount || 0);
+                });
+
+                blogsList.innerHTML = blog.map(function(post) {
+                  var hasLink = post.link && String(post.link).trim();
+                  var title = escapeHtml(post.title || "");
+                  var rawImg = post.image && String(post.image).trim() ? String(post.image).trim() : "";
+                  var imgSrc = rawImg ? escapeHtml(rawImg) : "";
+                  var imgAlt = escapeHtml(post.title || "Blog image");
+                  var imgBlock = imgSrc
+                    ? '<figure class="blog-figure"><img class="blog-image" src="' + imgSrc + '" alt="' + imgAlt + '" decoding="async"></figure>'
+                    : "";
+                  var postId = post.id || "blog-" + Math.random().toString(36).slice(2, 10);
+                  var likeCount = likesByPost[postId] || 0;
+                  var commentCount = commentCountsByPost[postId] || 0;
+                  var userLiked = Boolean(localStorage.getItem("liked-" + postId));
+                  return (
+                    '<li class="blog-item" id="' + postId + '">' +
+                    '<div class="card-top">' +
+                    '<h3 class="blog-title">' +
+                    (hasLink ? '<a href="' + escapeHtml(post.link) + '">' + title + '</a>' : title) +
+                    "</h3>" +
+                    '<button type="button" class="card-more" aria-label="Blog actions" disabled>⋯</button>' +
+                    '</div>' +
+                    '<p class="blog-date" datetime="' + escapeHtml(post.date || "") + '">' + formatBlogDate(post.date) + "</p>" +
+                    '<p class="blog-excerpt">' + escapeHtml(post.excerpt || "") + "</p>" +
+                    imgBlock +
+                    '<div class="social-bar">' +
+                    '<button type="button" class="social-like ' + (userLiked ? 'liked' : '') + '" data-post="' + postId + '">👍 ' + (userLiked ? 'Liked' : 'Like') + ' (' + likeCount + ')</button>' +
+                    '<button type="button" class="social-comment" data-post="' + postId + '">💬 Comment (' + commentCount + ')</button>' +
+                    '<button type="button" class="social-share" data-post="' + postId + '">📤 Share</button>' +
+                    '</div>' +
+                    '<div class="comment-section" id="comments-' + postId + '" style="display:none;" data-loaded="false">' +
+                    '<textarea class="comment-input" placeholder="Write a comment..."></textarea>' +
+                    '<button type="button" class="comment-submit">Post Comment</button>' +
+                    '<div class="comments-list"></div>' +
+                    '</div>' +
+                    "</li>"
+                  );
+                }).join('');
+              });
+          })
+          .catch(function(err) {
+            console.error('Failed to load blogs:', err);
+            showStatus(blogStatus, 'Unable to load blogs at this time.', true);
+          });
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -202,7 +202,7 @@
     if (!blogList) return;
     blogList.innerHTML = blog
       .map(function (post) {
-        var href = post.link && String(post.link).trim() ? escapeHtml(post.link) : "#";
+        var hasLink = post.link && String(post.link).trim();
         var title = escapeHtml(post.title || "");
         var rawImg = post.image && String(post.image).trim() ? String(post.image).trim() : "";
         var imgSrc = rawImg ? escapeHtml(rawImg) : "";
@@ -217,7 +217,9 @@
         return (
           '<li class="blog-item" id="' + postId + '">' +
           '<div class="card-top">' +
-          '<h3 class="blog-title"><a href="' + href + '">' + title + "</a></h3>" +
+          '<h3 class="blog-title">' +
+          (hasLink ? '<a href="' + escapeHtml(post.link) + '">' + title + '</a>' : title) +
+          "</h3>" +
           '<button type="button" class="card-more" aria-label="Blog actions" disabled>⋯</button>' +
           '</div>' +
           '<p class="blog-date" datetime="' + escapeHtml(post.date || "") + '">' + formatBlogDate(post.date) + "</p>" +
