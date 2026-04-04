@@ -167,6 +167,10 @@
             <div class="admin-field">
               <label for="edit-notebook-file">Upload .ipynb file</label>
               <input type="file" id="edit-notebook-file" accept=".ipynb">
+              <div id="notebook-file-info" class="admin-file-info admin-hidden">
+                <span id="notebook-file-name"></span>
+                <button type="button" id="btn-remove-notebook-file" class="admin-btn admin-btn-ghost">Remove file</button>
+              </div>
               <div id="notebook-dropzone" class="dropzone">Drop .ipynb here</div>
               <small>Drop or choose a .ipynb file to convert and embed automatically.</small>
             </div>

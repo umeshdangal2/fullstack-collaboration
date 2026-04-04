@@ -37,8 +37,8 @@
     <section id="hero" class="hero section">
       <div class="hero-bg" aria-hidden="true"></div>
       <div class="container hero-content">
-        <p class="hero-eyebrow">Hello — I’m</p>
-        <h1 class="hero-name">Umesh Dangal</h1>
+        <p class="hero-eyebrow"><span class="typing typing-small">Hello — I’m</span></p>
+        <h1 class="hero-name"><span class="typing typing-large">Umesh Dangal</span></h1>
         <p class="hero-tagline">I craft calm, purposeful digital experiences where clarity meets craft.</p>
         <a class="hero-cta" href="#projects">View work</a>
       </div>
@@ -48,8 +48,13 @@
       <div class="container narrow reveal">
         <h2 class="section-title">About</h2>
         <div class="about-grid">
-          <p class="about-lead">I;m a passionate data enthuasiast and programmer, skilled in Python,SQL and data visualization, driven by curiosity and a love for problem-solving."</p>
-          <p class="about-text">I am eager to apply my skills in data analysis and SQL through internship and collaborative oppertunities. I thrive on turning raw data into actionable insights, and i'm excited to groe in a dynamic team ennvironment. I am committed to continuous leaerning and bringing a proactive, analytical mindset to every project i take on.</p>
+          <div class="about-image-card">
+            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=crop&w=800&q=80" alt="Portrait placeholder">
+          </div>
+          <div>
+            <p class="about-lead">I’m a passionate data enthusiast and programmer, skilled in Python, SQL, and data visualization. I take pride in solving real problems with clean code and clear analysis.</p>
+            <p class="about-text">I am eager to apply my skills in data analysis and SQL through internships and collaborative opportunities. I thrive on turning raw data into actionable insights, and I’m excited to grow in a dynamic team environment. I am committed to continuous learning and bringing a proactive, analytical mindset to every project I take on.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -60,6 +65,7 @@
         <p class="section-intro">Selected work — case studies and experiments.</p>
         <div class="project-carousel" aria-live="polite" aria-label="Project carousel">
           <ul id="project-list" class="project-list"></ul>
+          <p id="projects-status" class="section-intro admin-hidden" aria-live="polite"></p>
         </div>
         <div class="projects-actions">
           <a href="/projects.html" class="btn btn-secondary">View all projects →</a>
@@ -84,7 +90,7 @@
         <ul class="contact-links">
           <li><a href="https://www.linkedin.com/in/umesh-dangal-606bb9292/" rel="noopener noreferrer">LinkedIn</a></li>
           <li><a href="https://github.com/umeshdangal2" rel="noopener noreferrer">GitHub</a></li>
-        
+        </ul>
       </div>
     </section>
   </main>

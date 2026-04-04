@@ -38,9 +38,46 @@
     var btnDelete = document.getElementById("btn-delete");
     var modalCloseButtons = document.querySelectorAll(".modal-close");
     var notebookFileInput = document.getElementById("edit-notebook-file");
+    var notebookFileInfo = document.getElementById("notebook-file-info");
+    var notebookFileName = document.getElementById("notebook-file-name");
+    var btnRemoveNotebookFile = document.getElementById("btn-remove-notebook-file");
     var notebookHtmlFromFile = "";
     var notebookJsonFromFile = null;
     var editDetailsEditor = document.getElementById("edit-details-editor");
+
+    function setNotebookFilePreview(name) {
+      if (name) {
+        notebookFileName.textContent = "Selected notebook: " + name;
+        show(notebookFileInfo);
+      } else {
+        notebookFileName.textContent = "";
+        hide(notebookFileInfo);
+      }
+    }
+
+    function clearNotebookFile() {
+      notebookJsonFromFile = null;
+      notebookHtmlFromFile = "";
+      if (notebookFileInput) notebookFileInput.value = "";
+      setNotebookFilePreview("");
+    }
+
+    function updateNotebookPreview() {
+      if (notebookFileInput && notebookFileInput.files && notebookFileInput.files.length > 0) {
+        setNotebookFilePreview(notebookFileInput.files[0].name);
+      } else if (notebookJsonFromFile) {
+        setNotebookFilePreview("Embedded notebook saved");
+      } else {
+        setNotebookFilePreview("");
+      }
+    }
+
+    if (btnRemoveNotebookFile) {
+      btnRemoveNotebookFile.addEventListener("click", function () {
+        clearNotebookFile();
+        show(dashMsg, "admin-msg-success", "Notebook file removed.");
+      });
+    }
 
     if (editDetailsEditor && window.Quill) {
       quillDetails = new Quill(editDetailsEditor, {
@@ -306,6 +343,7 @@
             notebookHtmlFromFile = proj.notebook_html || "";
             notebookJsonFromFile = proj.notebook_json || null;
             if (notebookFileInput) notebookFileInput.value = "";
+            updateNotebookPreview();
             show(btnDelete);
           });
         } else {
@@ -314,6 +352,7 @@
           notebookHtmlFromFile = "";
           notebookJsonFromFile = null;
           if (notebookFileInput) notebookFileInput.value = "";
+          updateNotebookPreview();
           if (quillDetails) quillDetails.root.innerHTML = "";
           hide(btnDelete);
         }
@@ -353,6 +392,7 @@
           notebookJsonFromFile = parsed;
           notebookHtmlFromFile = convertNotebookToHtml(parsed);
           document.getElementById("edit-notebook").value = "";
+          setNotebookFilePreview(file.name);
           show(dashMsg, "admin-msg-success", "Notebook converted and ready to embed.");
         } catch (ex) {
           console.error(ex);
@@ -368,8 +408,7 @@
       notebookFileInput.addEventListener("change", function (event) {
         var file = event.target.files && event.target.files[0];
         if (!file) {
-          notebookJsonFromFile = null;
-          notebookHtmlFromFile = "";
+          clearNotebookFile();
           return;
         }
         loadNotebookFile(file);

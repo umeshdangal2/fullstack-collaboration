@@ -20,6 +20,7 @@ const isProd = NODE_ENV === "production";
 const DATA_DIR = path.join(__dirname, "data");
 const BLOG_FILE = path.join(DATA_DIR, "blog.json");
 const PROJECTS_FILE = path.join(DATA_DIR, "projects.json");
+const SOCIAL_FILE = path.join(DATA_DIR, "social.json");
 const ADMIN_COOKIE = "portfolio_admin";
 
 const LIMITS = {
@@ -149,6 +150,26 @@ async function readProjects() {
   return data;
 }
 
+async function readSocial() {
+  const data = await storage.readSocial(SOCIAL_FILE);
+  if (!data || typeof data.posts !== "object" || Array.isArray(data.posts)) {
+    return { posts: {} };
+  }
+  return data;
+}
+
+function sanitizeCommentText(input, maxLen) {
+  if (typeof input !== "string") return "";
+  let s = input.replace(/\0/g, "").trim();
+  s = s.replace(/<[^>]*>/g, "");
+  if (s.length > maxLen) s = s.slice(0, maxLen);
+  return s;
+}
+
+function normalizePostId(id) {
+  return typeof id === "string" && /^[a-zA-Z0-9_-]+$/.test(id) ? id : null;
+}
+
 function sortBlogPosts(posts) {
   return [...posts].sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
@@ -267,6 +288,77 @@ app.get("/api/public/content", async (req, res, next) => {
       blog: sortBlogPosts(blog.posts),
       projects: sortProjects(projects.items),
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+app.get("/api/public/social", async (req, res, next) => {
+  try {
+    const social = await readSocial();
+    const posts = {};
+    Object.entries(social.posts || {}).forEach(function ([postId, data]) {
+      posts[postId] = {
+        likes: Number(data.likes || 0),
+        commentCount: Array.isArray(data.comments) ? data.comments.length : 0,
+      };
+    });
+    res.json({ posts });
+  } catch (e) {
+    next(e);
+  }
+});
+
+app.get("/api/public/social/:postId", async (req, res, next) => {
+  try {
+    const postId = normalizePostId(req.params.postId);
+    if (!postId) return res.status(400).json({ error: "Invalid post id" });
+    const social = await readSocial();
+    const data = social.posts[postId] || { likes: 0, comments: [] };
+    res.json({
+      postId,
+      likes: Number(data.likes || 0),
+      comments: Array.isArray(data.comments) ? data.comments.slice(-50) : [],
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+app.post("/api/public/social/:postId/like", async (req, res, next) => {
+  try {
+    const postId = normalizePostId(req.params.postId);
+    if (!postId) return res.status(400).json({ error: "Invalid post id" });
+    const action = req.body && req.body.action === "unlike" ? "unlike" : "like";
+    const social = await readSocial();
+    const post = social.posts[postId] || { likes: 0, comments: [] };
+    post.likes = Math.max(0, Number(post.likes || 0) + (action === "like" ? 1 : -1));
+    social.posts[postId] = post;
+    await storage.writeSocial(SOCIAL_FILE, social);
+    res.json({ likes: post.likes });
+  } catch (e) {
+    next(e);
+  }
+});
+
+app.post("/api/public/social/:postId/comment", async (req, res, next) => {
+  try {
+    const postId = normalizePostId(req.params.postId);
+    if (!postId) return res.status(400).json({ error: "Invalid post id" });
+    const comment = sanitizeCommentText(req.body && req.body.comment, 1000);
+    if (!comment) return res.status(400).json({ error: "Comment cannot be empty" });
+    const social = await readSocial();
+    const post = social.posts[postId] || { likes: 0, comments: [] };
+    post.comments = Array.isArray(post.comments) ? post.comments : [];
+    const newComment = {
+      id: crypto.randomUUID(),
+      text: comment,
+      createdAt: new Date().toISOString(),
+    };
+    post.comments.push(newComment);
+    social.posts[postId] = post;
+    await storage.writeSocial(SOCIAL_FILE, social);
+    res.status(201).json({ comment: newComment, commentCount: post.comments.length });
   } catch (e) {
     next(e);
   }
