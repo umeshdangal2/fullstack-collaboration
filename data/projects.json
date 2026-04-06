@@ -45,9 +45,9 @@
       "year": "2026",
       "title": "Test NB",
       "description": "Test notebook save",
-      "details": "pThis should look exactly like this stronguokay/u/strong/p",
+      "details": "<p>pokay/p</p>",
       "tags": "test",
-      "url": "",
+      "url": "https://github.com/umeshdangal2/fullstack-collaboration",
       "notebook": "",
       "notebook_html": "",
       "notebook_json": {
@@ -2877,6 +2877,18 @@
           }
         ]
       }
+    },
+    {
+      "id": "a726ea6b-29f4-415b-804c-27b9af2cfefa",
+      "year": "2026",
+      "title": "Test2",
+      "description": "Lets see what wa[[ems",
+      "details": "<p>okay</p>",
+      "tags": "apple tree",
+      "url": "",
+      "notebook": "",
+      "notebook_html": "",
+      "notebook_json": null
     }
   ]
 }

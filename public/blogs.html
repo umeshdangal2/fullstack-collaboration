@@ -10,6 +10,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" referrerpolicy="no-referrer">
+  <!-- Open Graph / Twitter Card -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://umeshdangal.vercel.app/blogs.html">
+  <meta property="og:title" content="Blog — Umesh Dangal">
+  <meta property="og:description" content="Notes and articles on data analysis, Python, SQL, and things I'm learning as a data professional.">
+  <meta property="og:image" content="https://umeshdangal.vercel.app/images/profile.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Blog — Umesh Dangal">
+  <meta name="twitter:description" content="Notes and articles on data analysis, Python, SQL, and things I'm learning as a data professional.">
+  <meta name="twitter:image" content="https://umeshdangal.vercel.app/images/profile.jpg">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -43,6 +54,28 @@
 
     <section class="blog-feed section">
       <div class="container">
+        <ul class="blog-list" aria-label="Sample blog posts">
+          <li class="blog-item scroll-animate">
+            <div class="card-top">
+              <h3 class="blog-title"><a href="#">From Raw Data to Real Insights: My Analytical Workflow</a></h3>
+            </div>
+            <time class="blog-date" datetime="2026-03-20">Mar 20, 2026</time>
+            <div class="blog-excerpt">
+              <p>Every data project starts with messy, incomplete data — and that's exactly where the interesting work begins. In this post, I walk through the five-step framework I use to move from raw CSV files to clear, actionable insights.</p>
+            </div>
+            <a class="blog-read-more" href="#">Read more <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+          </li>
+          <li class="blog-item scroll-animate">
+            <div class="card-top">
+              <h3 class="blog-title"><a href="#">Why SQL Still Dominates Data Analysis in 2026</a></h3>
+            </div>
+            <time class="blog-date" datetime="2026-02-05">Feb 5, 2026</time>
+            <div class="blog-excerpt">
+              <p>Despite the rise of Python libraries and BI tools, SQL remains the most versatile language for querying and transforming large datasets efficiently. Here's why every data professional should master it first.</p>
+            </div>
+            <a class="blog-read-more" href="#">Read more <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+          </li>
+        </ul>
         <p id="blog-status" class="section-intro admin-hidden" aria-live="polite"></p>
         <ul id="full-blog-list" class="blog-list"></ul>
       </div>
@@ -162,7 +195,7 @@
                     '<button type="button" class="card-more" aria-label="Blog actions" disabled>⋯</button>' +
                     '</div>' +
                     '<p class="blog-date" datetime="' + escapeHtml(post.date || "") + '">' + formatBlogDate(post.date) + "</p>" +
-                    '<p class="blog-excerpt">' + escapeHtml(post.excerpt || "") + "</p>" +
+                    '<div class="blog-excerpt">' + (post.excerpt || "") + "</div>" +
                     imgBlock +
                     '<div class="social-bar">' +
                     '<button type="button" class="social-like ' + (userLiked ? 'liked' : '') + '" data-post="' + postId + '">👍 ' + (userLiked ? 'Liked' : 'Like') + ' (' + likeCount + ')</button>' +

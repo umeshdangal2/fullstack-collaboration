@@ -101,7 +101,33 @@
             </div>
             <div class="admin-field">
               <label for="edit-excerpt">Excerpt</label>
-              <textarea id="edit-excerpt" maxlength="4000"></textarea>
+              <div id="edit-excerpt-toolbar">
+                <button class="ql-bold" type="button" aria-label="Bold"></button>
+                <button class="ql-italic" type="button" aria-label="Italic"></button>
+                <button class="ql-underline" type="button" aria-label="Underline"></button>
+                <button class="ql-strike" type="button" aria-label="Strikethrough"></button>
+                <button class="ql-list" value="ordered" type="button" aria-label="Ordered list"></button>
+                <button class="ql-list" value="bullet" type="button" aria-label="Bullet list"></button>
+                <button class="ql-blockquote" type="button" aria-label="Blockquote"></button>
+                <button class="ql-code-block" type="button" aria-label="Code block"></button>
+                <button class="ql-link" type="button" aria-label="Link"></button>
+                <select class="ql-size" aria-label="Font size">
+                  <option value="small"></option>
+                  <option selected></option>
+                  <option value="large"></option>
+                  <option value="huge"></option>
+                </select>
+                <select class="ql-header" aria-label="Heading">
+                  <option selected></option>
+                  <option value="1"></option>
+                  <option value="2"></option>
+                  <option value="3"></option>
+                </select>
+                <select class="ql-color" aria-label="Text color"></select>
+                <button class="ql-clean" type="button" aria-label="Clear formatting"></button>
+              </div>
+              <div id="edit-excerpt-editor" class="rich-editor"></div>
+              <textarea id="edit-excerpt" class="admin-hidden" maxlength="10000"></textarea>
             </div>
             <div class="admin-field">
               <label for="edit-link">Link URL (optional)</label>
@@ -143,19 +169,31 @@
                 <button class="ql-bold" type="button" aria-label="Bold"></button>
                 <button class="ql-italic" type="button" aria-label="Italic"></button>
                 <button class="ql-underline" type="button" aria-label="Underline"></button>
+                <button class="ql-strike" type="button" aria-label="Strikethrough"></button>
                 <button class="ql-list" value="ordered" type="button" aria-label="Ordered list"></button>
                 <button class="ql-list" value="bullet" type="button" aria-label="Bullet list"></button>
+                <button class="ql-blockquote" type="button" aria-label="Blockquote"></button>
+                <button class="ql-code-block" type="button" aria-label="Code block"></button>
+                <button class="ql-link" type="button" aria-label="Link"></button>
                 <select class="ql-size" aria-label="Font size">
                   <option value="small"></option>
                   <option selected></option>
                   <option value="large"></option>
                   <option value="huge"></option>
                 </select>
+                <select class="ql-header" aria-label="Heading">
+                  <option selected></option>
+                  <option value="1"></option>
+                  <option value="2"></option>
+                  <option value="3"></option>
+                </select>
                 <select class="ql-font" aria-label="Font family">
                   <option selected></option>
                   <option value="serif"></option>
                   <option value="monospace"></option>
                 </select>
+                <select class="ql-color" aria-label="Text color"></select>
+                <button class="ql-clean" type="button" aria-label="Clear formatting"></button>
               </div>
               <div id="edit-details-editor" class="rich-editor"></div>
               <textarea id="edit-details" class="admin-hidden" maxlength="10000" placeholder="Extended project details, documentation, show notes, and embed links"></textarea>

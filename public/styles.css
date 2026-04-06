@@ -1045,6 +1045,7 @@ a:hover {
 }
 
 .projects-grid {
+  padding-top: 1rem;
   padding-bottom: 4rem;
   margin-top: 0;
 }
@@ -1054,7 +1055,13 @@ a:hover {
 }
 
 .blog-feed {
+  padding-top: 1rem;
   margin-top: 0;
+}
+
+/* Homepage sections — tighten gap after preceding section */
+.skills + .projects {
+  padding-top: 1rem;
 }
 
 .projects-full-list {
@@ -1100,14 +1107,39 @@ a:hover {
 }
 
 .rich-editor {
-  min-height: 200px;
+  min-height: 120px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--bg);
   color: var(--text);
+  position: relative;
+  overflow: visible;
 }
 
-#edit-details-toolbar {
+.rich-editor .ql-editor {
+  min-height: 120px;
+}
+
+#edit-excerpt-editor {
+  min-height: 100px;
+}
+
+#edit-excerpt-editor .ql-editor {
+  min-height: 100px;
+}
+
+.admin-field .ql-toolbar {
+  position: relative;
+  z-index: 1;
+}
+
+.admin-field .ql-container {
+  position: relative;
+  overflow: auto;
+}
+
+#edit-details-toolbar,
+#edit-excerpt-toolbar {
   margin-bottom: 0.5rem;
 }
 
@@ -1337,6 +1369,193 @@ a:hover {
   margin: 0;
   font-size: 0.875rem;
   color: var(--text-muted);
+}
+
+/* ——— Profile image — circular ——— */
+.about-image-card.profile-card {
+  border-radius: 50%;
+  width: 250px;
+  height: 250px;
+  overflow: hidden;
+  border: 3px solid rgba(0, 153, 200, 0.25);
+  box-shadow: var(--shadow-lg), 0 0 0 6px rgba(0, 153, 200, 0.08);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.about-image-card.profile-card img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  border-radius: 0;
+  object-fit: cover;
+}
+
+@media (max-width: 639px) {
+  .about-image-card.profile-card {
+    width: 180px;
+    height: 180px;
+    margin: 0 auto;
+  }
+}
+
+/* ——— Tech tag pill badges ——— */
+.tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.tech-tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: var(--teal-soft);
+  color: var(--teal-deep);
+  border: 1px solid rgba(0, 153, 200, 0.2);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* ——— Project card image / placeholder ——— */
+.project-card-img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.project-card-img-placeholder {
+  width: 100%;
+  height: 160px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(0, 153, 200, 0.12), rgba(46, 181, 212, 0.06));
+  border: 1px solid var(--border);
+  margin-bottom: 1rem;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 2rem;
+}
+
+/* ——— GitHub link button ——— */
+.github-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  background: var(--text);
+  color: var(--bg-elevated);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.25s var(--ease-out), transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
+  margin-top: 0.75rem;
+}
+
+.github-btn:hover {
+  background: var(--teal-deep);
+  color: var(--bg-elevated);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 97, 131, 0.2);
+}
+
+/* ——— Blog "Read more" link ——— */
+.blog-read-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--teal);
+  text-decoration: none;
+  transition: color 0.2s var(--ease-out), gap 0.2s var(--ease-out);
+}
+
+.blog-read-more:hover {
+  color: var(--teal-deep);
+  gap: 0.5rem;
+}
+
+/* ——— Skills section ——— */
+.skills {
+  background: var(--bg);
+}
+
+.skills-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.skill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.25s var(--ease-out), transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
+}
+
+.skill-badge i {
+  color: var(--teal);
+  font-size: 1rem;
+}
+
+.skill-badge:hover {
+  border-color: var(--teal);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ——— Homepage project preview grid ——— */
+.project-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+/* ——— Scroll entrance animation ——— */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.scroll-animate {
+  opacity: 0;
+}
+
+.scroll-animate.visible {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-animate {
+    opacity: 1;
+  }
+  .scroll-animate.visible {
+    animation: none;
+  }
 }
 
 /* ——— Admin (matches site palette) ——— */

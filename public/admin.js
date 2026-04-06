@@ -34,6 +34,7 @@
     var blogFields = document.getElementById("blog-fields");
     var projectFields = document.getElementById("project-fields");
     var quillDetails = null;
+    var quillExcerpt = null;
     var btnSave = document.getElementById("btn-save");
     var btnDelete = document.getElementById("btn-delete");
     var modalCloseButtons = document.querySelectorAll(".modal-close");
@@ -44,6 +45,7 @@
     var notebookHtmlFromFile = "";
     var notebookJsonFromFile = null;
     var editDetailsEditor = document.getElementById("edit-details-editor");
+    var editExcerptEditor = document.getElementById("edit-excerpt-editor");
 
     function setNotebookFilePreview(name) {
       if (name) {
@@ -84,6 +86,15 @@
         theme: 'snow',
         modules: {
           toolbar: '#edit-details-toolbar'
+        }
+      });
+    }
+
+    if (editExcerptEditor && window.Quill) {
+      quillExcerpt = new Quill(editExcerptEditor, {
+        theme: 'snow',
+        modules: {
+          toolbar: '#edit-excerpt-toolbar'
         }
       });
     }
@@ -311,7 +322,11 @@
             if (!post) return;
             document.getElementById("edit-title").value = post.title || "";
             document.getElementById("edit-date").value = post.date || "";
-            document.getElementById("edit-excerpt").value = post.excerpt || "";
+            if (quillExcerpt) {
+              quillExcerpt.root.innerHTML = post.excerpt || "";
+            } else {
+              document.getElementById("edit-excerpt").value = post.excerpt || "";
+            }
             document.getElementById("edit-link").value = post.link || "";
             document.getElementById("edit-image").value = post.image || "";
             show(btnDelete);
@@ -319,6 +334,7 @@
         } else {
           modalTitle.textContent = "Add New Blog Post";
           editForm.reset();
+          if (quillExcerpt) quillExcerpt.root.innerHTML = "";
           hide(btnDelete);
         }
       } else {
@@ -476,7 +492,7 @@
         var body = JSON.stringify({
           title: document.getElementById("edit-title").value,
           date: document.getElementById("edit-date").value,
-          excerpt: document.getElementById("edit-excerpt").value,
+          excerpt: quillExcerpt ? quillExcerpt.root.innerHTML : document.getElementById("edit-excerpt").value,
           link: document.getElementById("edit-link").value.trim(),
           image: document.getElementById("edit-image").value.trim(),
         });

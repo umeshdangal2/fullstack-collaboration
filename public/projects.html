@@ -10,6 +10,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" referrerpolicy="no-referrer">
+  <!-- Open Graph / Twitter Card -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://umeshdangal.vercel.app/projects.html">
+  <meta property="og:title" content="Projects — Umesh Dangal">
+  <meta property="og:description" content="Data analysis and Python projects — case studies, dashboards, and experiments by Umesh Dangal.">
+  <meta property="og:image" content="https://umeshdangal.vercel.app/images/profile.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Projects — Umesh Dangal">
+  <meta name="twitter:description" content="Data analysis and Python projects — case studies, dashboards, and experiments by Umesh Dangal.">
+  <meta name="twitter:image" content="https://umeshdangal.vercel.app/images/profile.jpg">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -87,23 +98,46 @@
             
             projectsList.innerHTML = projects.map(function(project) {
               var detailHref = '/project.html?id=' + encodeURIComponent(project.id);
-              return '<li class="project-full-card" data-href="' + detailHref + '">' +
+
+              var imgBlock = (project.image && String(project.image).trim())
+                ? '<img class="project-card-img" src="' + escapeHtml(String(project.image).trim()) + '" alt="' + escapeHtml(project.title || '') + '">'
+                : '<div class="project-card-img-placeholder" aria-hidden="true">📊</div>';
+
+              var tagPills = '';
+              if (project.tags) {
+                var tagArr = String(project.tags).split(/[·,]/).map(function(t) { return t.trim(); }).filter(Boolean);
+                tagPills = '<div class="tech-tags">' + tagArr.map(function(t) {
+                  return '<span class="tech-tag">' + escapeHtml(t) + '</span>';
+                }).join('') + '</div>';
+              }
+
+              var linkBtn = (project.url && String(project.url).trim())
+                ? '<a class="github-btn" href="' + escapeHtml(String(project.url).trim()) + '" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-github" aria-hidden="true"></i> View on GitHub</a>'
+                : '';
+
+              return '<li class="project-full-card scroll-animate" data-href="' + detailHref + '">' +
+                imgBlock +
                 '<div class="project-card-content">' +
                 '<h3 class="project-title">' + escapeHtml(project.title || '') + '</h3>' +
                 '<p class="project-year">' + escapeHtml(project.year || '') + '</p>' +
                 '<p class="project-description">' + escapeHtml(project.description || '') + '</p>' +
-                (project.tags ? '<p class="project-tags">' + escapeHtml(project.tags) + '</p>' : '') +
+                tagPills +
+                linkBtn +
                 '</div>' +
                 '</li>';
             }).join('');
 
-            // Add click event listeners to make cards clickable
+            // Cards clickable — let anchor clicks (GitHub btn) pass through
             projectsList.querySelectorAll('.project-full-card').forEach(function(card) {
               card.style.cursor = 'pointer';
-              card.addEventListener('click', function() {
+              card.addEventListener('click', function(e) {
+                if (e.target.closest('a')) return;
                 window.location.href = this.dataset.href;
               });
             });
+
+            // Trigger scroll entrance animation on dynamically injected cards
+            if (window.observeScrollAnimate) window.observeScrollAnimate(projectsList);
           })
           .catch(function(err) {
             console.error('Failed to load projects:', err);

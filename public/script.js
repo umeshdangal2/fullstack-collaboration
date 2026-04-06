@@ -81,6 +81,33 @@
     });
   }
 
+  /* Scroll entrance animations (.scroll-animate)
+     Also exposed as window.observeScrollAnimate so dynamic renderers
+     can register freshly injected cards after the initial page scan. */
+  var scrollObserver = null;
+  if ('IntersectionObserver' in window) {
+    scrollObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          scrollObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+  }
+
+  function observeScrollAnimate(root) {
+    var els = (root || document).querySelectorAll('.scroll-animate:not(.visible)');
+    if (scrollObserver) {
+      els.forEach(function(el) { scrollObserver.observe(el); });
+    } else {
+      els.forEach(function(el) { el.style.opacity = '1'; });
+    }
+  }
+
+  observeScrollAnimate();
+  window.observeScrollAnimate = observeScrollAnimate;
+
   /* Active nav hint on scroll */
   const sections = document.querySelectorAll("section[id]");
   if (sections.length && header && navLinks.length) {

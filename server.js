@@ -52,6 +52,20 @@ function sanitizeText(input, maxLen) {
   return s;
 }
 
+function sanitizeRichText(input, maxLen) {
+  if (typeof input !== "string") return "";
+  let s = input.replace(/\0/g, "").trim();
+  // Remove dangerous tags/attributes but keep safe formatting HTML
+  s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+  s = s.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "");
+  s = s.replace(/on\w+\s*=\s*["'][^"']*["']/gi, "");
+  s = s.replace(/on\w+\s*=\s*\S+/gi, "");
+  s = s.replace(/javascript\s*:/gi, "");
+  s = s.replace(/<\/?(iframe|object|embed|form|input|button|meta|link|base)[^>]*>/gi, "");
+  if (s.length > maxLen) s = s.slice(0, maxLen);
+  return s;
+}
+
 function sanitizeNotebookHtml(html) {
   if (typeof html !== "string" || !html.trim()) return "";
   const dangerous = /<script\b|on\w+\s*=|javascript:/i;
@@ -381,7 +395,7 @@ const writeGuard = [requireAuth, requirePersistence];
 app.post("/api/admin/blog", ...writeGuard, async (req, res, next) => {
   try {
     const title = sanitizeText(req.body.title, LIMITS.title);
-    const excerpt = sanitizeText(req.body.excerpt, LIMITS.excerpt);
+    const excerpt = sanitizeRichText(req.body.excerpt, LIMITS.excerpt);
     const link = normalizeOptionalUrl(req.body.link);
     const image = normalizeOptionalImageUrl(req.body.image);
     const date = normalizeDate(req.body.date);
@@ -411,7 +425,7 @@ app.put("/api/admin/blog/:id", ...writeGuard, async (req, res, next) => {
       return res.status(400).json({ error: "Invalid id" });
     }
     const title = sanitizeText(req.body.title, LIMITS.title);
-    const excerpt = sanitizeText(req.body.excerpt, LIMITS.excerpt);
+    const excerpt = sanitizeRichText(req.body.excerpt, LIMITS.excerpt);
     const link = normalizeOptionalUrl(req.body.link);
     const image = normalizeOptionalImageUrl(req.body.image);
     const date = normalizeDate(req.body.date);
@@ -448,7 +462,7 @@ app.post("/api/admin/projects", ...writeGuard, async (req, res, next) => {
     const year = sanitizeText(req.body.year, LIMITS.year);
     const title = sanitizeText(req.body.title, LIMITS.title);
     const description = sanitizeText(req.body.description, LIMITS.description);
-    const details = sanitizeText(req.body.details || "", 10000);
+    const details = sanitizeRichText(req.body.details || "", 10000);
     const tags = sanitizeText(req.body.tags, LIMITS.tags);
     const url = normalizeOptionalUrl(req.body.url);
     const notebook = normalizeOptionalUrl(req.body.notebook);
@@ -488,7 +502,7 @@ app.put("/api/admin/projects/:id", ...writeGuard, async (req, res, next) => {
     const year = sanitizeText(req.body.year, LIMITS.year);
     const title = sanitizeText(req.body.title, LIMITS.title);
     const description = sanitizeText(req.body.description, LIMITS.description);
-    const details = sanitizeText(req.body.details || "", 10000);
+    const details = sanitizeRichText(req.body.details || "", 10000);
     const tags = sanitizeText(req.body.tags, LIMITS.tags);
     const url = normalizeOptionalUrl(req.body.url);
     const notebook = normalizeOptionalUrl(req.body.notebook);

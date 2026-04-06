@@ -85,7 +85,9 @@
     if (!projectList) return;
     projectList.querySelectorAll(".project-card").forEach(function (card) {
       card.style.cursor = "pointer";
-      card.addEventListener("click", function () {
+      card.addEventListener("click", function (e) {
+        // Let anchor tags (e.g. GitHub button) handle their own navigation
+        if (e.target.closest('a')) return;
         if (this.dataset && this.dataset.href) {
           window.location.href = this.dataset.href;
         }
@@ -173,19 +175,34 @@
     projectList.innerHTML = projects
       .map(function (p, index) {
         var titleHtml = escapeHtml(p.title || "");
-        var titleInner = p.url && typeof p.url === "string"
-          ? '<a href="' + escapeHtml(p.url) + '" rel="noopener noreferrer">' + titleHtml + "</a>"
-          : titleHtml;
         var detailHref = "/project.html?id=" + encodeURIComponent(p.id || "");
+
+        var imgBlock = (p.image && String(p.image).trim())
+          ? '<img class="project-card-img" src="' + escapeHtml(String(p.image).trim()) + '" alt="' + escapeHtml(p.title || "") + '">'
+          : '<div class="project-card-img-placeholder" aria-hidden="true">📊</div>';
+
+        var tagPills = '';
+        if (p.tags) {
+          var tagArr = String(p.tags).split(/[·,]/).map(function(t) { return t.trim(); }).filter(Boolean);
+          tagPills = '<div class="tech-tags">' + tagArr.map(function(t) {
+            return '<span class="tech-tag">' + escapeHtml(t) + '</span>';
+          }).join('') + '</div>';
+        }
+
+        var linkBtn = (p.url && String(p.url).trim())
+          ? '<a class="github-btn" href="' + escapeHtml(String(p.url).trim()) + '" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-github" aria-hidden="true"></i> View on GitHub</a>'
+          : '';
+
         return (
           '<li class="project-card" data-index="' + index + '" data-href="' + detailHref + '">' +
-          '<div class="card-top">' +
-          '<h3 class="project-title">' + titleInner + "</h3>" +
-          '<button type="button" class="card-more" aria-label="Project actions" disabled>⋯</button>' +
-          '</div>' +
-          '<span class="project-year">' + escapeHtml(p.year || "") + "</span>" +
+          imgBlock +
+          '<div class="project-card-content">' +
+          '<h3 class="project-title">' + titleHtml + "</h3>" +
+          '<span class="project-year">' + escapeHtml(p.year || "") + '</span>' +
           '<p class="project-desc">' + escapeHtml(p.description || "") + "</p>" +
-          '<span class="project-tags">' + escapeHtml(p.tags || "") + "</span>" +
+          tagPills +
+          linkBtn +
+          '</div>' +
           "</li>"
         );
       })
@@ -196,6 +213,7 @@
     }
     bindProjectCardClicks();
     initProjectCarousel();
+    if (window.observeScrollAnimate) window.observeScrollAnimate(projectList);
   }
 
   function renderBlogPosts(blog) {
@@ -223,7 +241,7 @@
           '<button type="button" class="card-more" aria-label="Blog actions" disabled>⋯</button>' +
           '</div>' +
           '<p class="blog-date" datetime="' + escapeHtml(post.date || "") + '">' + formatBlogDate(post.date) + "</p>" +
-          '<p class="blog-excerpt">' + escapeHtml(post.excerpt || "") + "</p>" +
+          '<div class="blog-excerpt">' + (post.excerpt || "") + "</div>" +
           imgBlock +
           '<div class="social-bar">' +
           '<button type="button" class="social-like ' + (userLiked ? 'liked' : '') + '" data-post="' + postId + '">👍 ' + (userLiked ? 'Liked' : 'Like') + ' (' + likeCount + ')</button>' +
