@@ -110,6 +110,7 @@
               var linkBtn = (project.url && String(project.url).trim())
                 ? '<a class="github-btn" href="' + escapeHtml(String(project.url).trim()) + '" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-github" aria-hidden="true"></i> View on GitHub</a>'
                 : '';
+              var copyBtn = '<button type="button" class="btn btn-secondary project-share" data-url="' + detailHref + '">Copy link</button>';
 
               return '<li class="project-full-card scroll-animate" data-href="' + detailHref + '">' +
                 imgBlock +
@@ -118,6 +119,7 @@
                 '<p class="project-year">' + escapeHtml(project.year || '') + '</p>' +
                 '<p class="project-description">' + escapeHtml(project.description || '') + '</p>' +
                 tagPills +
+                copyBtn +
                 linkBtn +
                 '</div>' +
                 '</li>';
@@ -127,8 +129,25 @@
             projectsList.querySelectorAll('.project-full-card').forEach(function(card) {
               card.style.cursor = 'pointer';
               card.addEventListener('click', function(e) {
-                if (e.target.closest('a')) return;
+                if (e.target.closest('a,button')) return;
                 window.location.href = this.dataset.href;
+              });
+            });
+
+            projectsList.querySelectorAll('.project-share').forEach(function(btn) {
+              btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var raw = this.getAttribute('data-url') || '';
+                var url = new URL(raw || window.location.href, window.location.origin).href;
+                navigator.clipboard
+                  .writeText(url)
+                  .then(function() {
+                    alert('Project link copied to clipboard.');
+                  })
+                  .catch(function() {
+                    window.prompt('Copy this URL', url);
+                  });
               });
             });
 

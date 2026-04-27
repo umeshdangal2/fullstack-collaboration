@@ -26,6 +26,7 @@
 
   var likesByPost = {};
   var commentCountsByPost = {};
+  var toastTimer = null;
 
   function getLikeCount(postId) {
     return Number(likesByPost[postId] || 0);
@@ -55,6 +56,25 @@
     el.textContent = text;
     el.classList.remove("admin-hidden");
     el.style.color = isError ? "#6b2d2d" : "";
+  }
+
+  function showToast(message) {
+    var toast = document.getElementById("site-toast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "site-toast";
+      toast.className = "site-toast";
+      toast.setAttribute("aria-live", "polite");
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add("show");
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+    }
+    toastTimer = setTimeout(function () {
+      toast.classList.remove("show");
+    }, 1800);
   }
 
   function renderCommentsList(postId, comments) {
@@ -87,7 +107,7 @@
       card.style.cursor = "pointer";
       card.addEventListener("click", function (e) {
         // Let anchor tags (e.g. GitHub button) handle their own navigation
-        if (e.target.closest('a')) return;
+        if (e.target.closest('a,button')) return;
         if (this.dataset && this.dataset.href) {
           window.location.href = this.dataset.href;
         }
@@ -197,7 +217,18 @@
           '<li class="project-card" data-index="' + index + '" data-href="' + detailHref + '">' +
           imgBlock +
           '<div class="project-card-content">' +
+          '<div class="card-top">' +
           '<h3 class="project-title">' + titleHtml + "</h3>" +
+          '<div class="card-menu-wrap">' +
+          '<button type="button" class="card-more" aria-label="Project actions" aria-haspopup="true" aria-expanded="false">⋯</button>' +
+          '<div class="card-menu" role="menu" hidden>' +
+          '<button type="button" class="card-menu-item card-copy-link" role="menuitem" data-url="' + escapeHtml(detailHref) + '">Copy link</button>' +
+          '<button type="button" class="card-menu-item card-copy-title-link" role="menuitem" data-url="' + escapeHtml(detailHref) + '" data-title="' + titleHtml + '">Copy title + link</button>' +
+          '<button type="button" class="card-menu-item card-open-link" role="menuitem" data-url="' + escapeHtml(detailHref) + '">Open in new tab</button>' +
+          '<button type="button" class="card-menu-item card-share-linkedin" role="menuitem" data-url="' + escapeHtml(detailHref) + '">Share to LinkedIn</button>' +
+          '</div>' +
+          '</div>' +
+          '</div>' +
           '<span class="project-year">' + escapeHtml(p.year || "") + '</span>' +
           '<p class="project-desc">' + escapeHtml(p.description || "") + "</p>" +
           tagPills +
@@ -233,13 +264,22 @@
         var likeCount = getLikeCount(postId);
         var commentCount = getCommentCount(postId);
         var userLiked = Boolean(localStorage.getItem("liked-" + postId));
+        var blogCopyPath = detailPath || ("/blogs.html#" + postId);
         return (
           '<li class="blog-item" id="' + postId + '">' +
           '<div class="card-top">' +
           '<h3 class="blog-title">' +
           (detailPath ? '<a href="' + escapeHtml(detailPath) + '">' + title + '</a>' : title) +
           "</h3>" +
-          '<button type="button" class="card-more" aria-label="Blog actions" disabled>⋯</button>' +
+          '<div class="card-menu-wrap">' +
+          '<button type="button" class="card-more" aria-label="Blog actions" aria-haspopup="true" aria-expanded="false">⋯</button>' +
+          '<div class="card-menu" role="menu" hidden>' +
+          '<button type="button" class="card-menu-item card-copy-link" role="menuitem" data-url="' + escapeHtml(blogCopyPath) + '">Copy link</button>' +
+          '<button type="button" class="card-menu-item card-copy-title-link" role="menuitem" data-url="' + escapeHtml(blogCopyPath) + '" data-title="' + title + '">Copy title + link</button>' +
+          '<button type="button" class="card-menu-item card-open-link" role="menuitem" data-url="' + escapeHtml(blogCopyPath) + '">Open in new tab</button>' +
+          '<button type="button" class="card-menu-item card-share-linkedin" role="menuitem" data-url="' + escapeHtml(blogCopyPath) + '">Share to LinkedIn</button>' +
+          '</div>' +
+          '</div>' +
           '</div>' +
           '<p class="blog-date" datetime="' + escapeHtml(post.date || "") + '">' + formatBlogDate(post.date) + "</p>" +
           '<div class="blog-excerpt">' + (post.excerpt || "") + "</div>" +
@@ -249,7 +289,7 @@
           '<div class="social-bar">' +
           '<button type="button" class="social-like ' + (userLiked ? 'liked' : '') + '" data-post="' + postId + '">👍 ' + (userLiked ? 'Liked' : 'Like') + ' (' + likeCount + ')</button>' +
           '<button type="button" class="social-comment" data-post="' + postId + '">💬 Comment (' + commentCount + ')</button>' +
-          '<button type="button" class="social-share" data-post="' + postId + '">📤 Share</button>' +
+          '<button type="button" class="social-share" data-post="' + postId + '" data-url="' + escapeHtml(detailPath || "") + '">📤 Share</button>' +
           '</div>' +
           '<div class="comment-section" id="comments-' + postId + '" style="display:none;" data-loaded="false">' +
           '<textarea class="comment-input" placeholder="Write a comment..."></textarea>' +
@@ -330,17 +370,91 @@
       });
   }
 
+  function toAbsoluteUrl(pathLike) {
+    try {
+      return new URL(pathLike, window.location.origin).href;
+    } catch {
+      return window.location.href;
+    }
+  }
+
+  function closeCardMenus(exceptWrap) {
+    document.querySelectorAll(".card-menu-wrap.is-open").forEach(function (wrap) {
+      if (exceptWrap && wrap === exceptWrap) return;
+      wrap.classList.remove("is-open");
+      var menu = wrap.querySelector(".card-menu");
+      var trigger = wrap.querySelector(".card-more");
+      if (menu) menu.hidden = true;
+      if (trigger) trigger.setAttribute("aria-expanded", "false");
+    });
+  }
+
+  function toggleCardMenu(button) {
+    var wrap = button.closest(".card-menu-wrap");
+    if (!wrap) return;
+    var menu = wrap.querySelector(".card-menu");
+    if (!menu) return;
+    var willOpen = menu.hidden;
+    closeCardMenus(wrap);
+    menu.hidden = !willOpen;
+    wrap.classList.toggle("is-open", willOpen);
+    button.setAttribute("aria-expanded", willOpen ? "true" : "false");
+  }
+
   function handleShareButton(button) {
     var postId = button.getAttribute("data-post");
-    var blogUrl = window.location.href + "#" + postId;
+    var dataUrl = button.getAttribute("data-url") || "";
+    var fallback = window.location.pathname + "#" + postId;
+    var blogUrl = toAbsoluteUrl(dataUrl || fallback);
     navigator.clipboard
       .writeText(blogUrl)
       .then(function () {
-        alert("Blog link copied to clipboard.");
+        showToast("Blog link copied.");
       })
       .catch(function () {
         window.prompt("Copy this URL", blogUrl);
       });
+  }
+
+  function handleCopyLinkButton(button) {
+    var dataUrl = button.getAttribute("data-url") || "";
+    var targetUrl = toAbsoluteUrl(dataUrl || window.location.href);
+    navigator.clipboard
+      .writeText(targetUrl)
+      .then(function () {
+        showToast("Link copied.");
+      })
+      .catch(function () {
+        window.prompt("Copy this URL", targetUrl);
+      });
+  }
+
+  function handleCopyTitleLinkButton(button) {
+    var dataUrl = button.getAttribute("data-url") || "";
+    var title = (button.getAttribute("data-title") || "").trim();
+    var targetUrl = toAbsoluteUrl(dataUrl || window.location.href);
+    var text = title ? title + "\n" + targetUrl : targetUrl;
+    navigator.clipboard
+      .writeText(text)
+      .then(function () {
+        showToast("Title and link copied.");
+      })
+      .catch(function () {
+        window.prompt("Copy this text", text);
+      });
+  }
+
+  function handleOpenLinkButton(button) {
+    var dataUrl = button.getAttribute("data-url") || "";
+    var targetUrl = toAbsoluteUrl(dataUrl || window.location.href);
+    window.open(targetUrl, "_blank", "noopener,noreferrer");
+  }
+
+  function handleLinkedInShareButton(button) {
+    var dataUrl = button.getAttribute("data-url") || "";
+    var targetUrl = toAbsoluteUrl(dataUrl || window.location.href);
+    var shareUrl = "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(targetUrl);
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
   }
 
   function handleCommentSubmit(button) {
@@ -383,13 +497,53 @@
         commentSection.dataset.loaded = "true";
       })
       .catch(function () {
-        alert("Could not post your comment right now.");
+        showToast("Could not post comment right now.");
       });
   }
 
   function handleGlobalClick(event) {
-    var button = event.target;
-    if (!(button instanceof HTMLElement)) return;
+    var el = event.target;
+    if (!(el instanceof HTMLElement)) return;
+    var wrap = el.closest(".card-menu-wrap");
+    if (!wrap) {
+      closeCardMenus();
+    }
+    var button = el.closest(".social-like, .social-comment, .social-share, .comment-submit, .card-more, .card-copy-link, .card-copy-title-link, .card-open-link, .card-share-linkedin");
+    if (!button) return;
+    if (button.matches(".card-more")) {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleCardMenu(button);
+      return;
+    }
+    if (button.matches(".card-copy-link")) {
+      event.preventDefault();
+      event.stopPropagation();
+      handleCopyLinkButton(button);
+      closeCardMenus();
+      return;
+    }
+    if (button.matches(".card-copy-title-link")) {
+      event.preventDefault();
+      event.stopPropagation();
+      handleCopyTitleLinkButton(button);
+      closeCardMenus();
+      return;
+    }
+    if (button.matches(".card-open-link")) {
+      event.preventDefault();
+      event.stopPropagation();
+      handleOpenLinkButton(button);
+      closeCardMenus();
+      return;
+    }
+    if (button.matches(".card-share-linkedin")) {
+      event.preventDefault();
+      event.stopPropagation();
+      handleLinkedInShareButton(button);
+      closeCardMenus();
+      return;
+    }
     if (button.matches(".social-like")) {
       handleLikeButton(button);
       return;
