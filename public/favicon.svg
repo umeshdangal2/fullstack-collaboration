@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="UD favicon">
+  <rect width="64" height="64" rx="16" fill="#083244"/>
+  <path d="M17 18v16c0 9 5.2 14 13 14s13-5 13-14V18h-7v15.4c0 5.2-2 8.2-6 8.2s-6-3-6-8.2V18h-7z" fill="#7dd3e8"/>
+  <path d="M45 18h-7v30h7c9.2 0 15-5.8 15-15s-5.8-15-15-15zm-.2 6c4.8 0 8 3.2 8 9s-3.2 9-8 9H45V24h-.2z" fill="#ffffff"/>
+</svg>
