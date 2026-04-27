@@ -188,6 +188,54 @@ function sortBlogPosts(posts) {
   return [...posts].sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
 
+function slugifyTitle(title) {
+  const base = String(title || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+  return base || "post";
+}
+
+function getPostShortId(post) {
+  const raw = String((post && post.id) || "").replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+  return raw ? raw.slice(0, 8) : "entry";
+}
+
+function buildBlogSlug(post) {
+  return `${slugifyTitle(post && post.title)}-${getPostShortId(post)}`;
+}
+
+function withBlogSeoFields(post) {
+  const slug = buildBlogSlug(post);
+  return {
+    ...post,
+    slug,
+    path: `/blog/${slug}`,
+  };
+}
+
+function addBlogSeoFields(posts) {
+  return (posts || []).map(withBlogSeoFields);
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;");
+}
+
+function stripHtml(s) {
+  return String(s || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function serializeJsonLd(data) {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
 function sortProjects(items) {
   return [...items].sort((a, b) => {
     const y = String(b.year).localeCompare(String(a.year));
@@ -299,7 +347,7 @@ app.get("/api/public/content", async (req, res, next) => {
   try {
     const [blog, projects] = await Promise.all([readBlog(), readProjects()]);
     res.json({
-      blog: sortBlogPosts(blog.posts),
+      blog: addBlogSeoFields(sortBlogPosts(blog.posts)),
       projects: sortProjects(projects.items),
     });
   } catch (e) {
@@ -382,9 +430,166 @@ app.get("/api/admin/content", requireAuth, async (req, res, next) => {
   try {
     const [blog, projects] = await Promise.all([readBlog(), readProjects()]);
     res.json({
-      blog: sortBlogPosts(blog.posts),
+      blog: addBlogSeoFields(sortBlogPosts(blog.posts)),
       projects: sortProjects(projects.items),
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+app.get("/blog/:slug", async (req, res, next) => {
+  try {
+    const blog = await readBlog();
+    const posts = addBlogSeoFields(sortBlogPosts(blog.posts));
+    const post = posts.find((p) => p.slug === req.params.slug);
+    if (!post) {
+      return res.status(404).send("Not found");
+    }
+
+    const siteOrigin = process.env.SITE_URL || `${req.protocol}://${req.get("host")}`;
+    const canonicalUrl = `${siteOrigin}${post.path}`;
+    const pageTitle = `${String(post.title || "Blog Post")} | Umesh Dangal`;
+    const metaDescription = stripHtml(post.excerpt || "").slice(0, 155);
+    const publishedAt = normalizeDate(post.date) || String(post.date || "");
+    const imageUrl = post.image && String(post.image).startsWith("/")
+      ? `${siteOrigin}${String(post.image)}`
+      : String(post.image || `${siteOrigin}/images/profile.jpg`);
+
+    const postBody = post.excerpt || "";
+    const plainExcerpt = stripHtml(post.excerpt || "");
+    const sourceLink = post.link
+      ? `<p><a class="btn btn-secondary" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer">Read source</a></p>`
+      : "";
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: String(post.title || "Blog Post"),
+      datePublished: publishedAt,
+      dateModified: publishedAt,
+      description: plainExcerpt,
+      image: [imageUrl],
+      mainEntityOfPage: {
+        "@type": "WebPage",
+        "@id": canonicalUrl,
+      },
+      author: {
+        "@type": "Person",
+        name: "Umesh Dangal",
+      },
+      publisher: {
+        "@type": "Person",
+        name: "Umesh Dangal",
+      },
+    };
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(pageTitle)}</title>
+  <meta name="description" content="${escapeHtml(metaDescription)}">
+  <link rel="canonical" href="${escapeHtml(canonicalUrl)}">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="${escapeHtml(pageTitle)}">
+  <meta property="og:description" content="${escapeHtml(metaDescription)}">
+  <meta property="og:url" content="${escapeHtml(canonicalUrl)}">
+  <meta property="og:image" content="${escapeHtml(imageUrl)}">
+  <meta property="article:published_time" content="${escapeHtml(publishedAt)}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeHtml(pageTitle)}">
+  <meta name="twitter:description" content="${escapeHtml(metaDescription)}">
+  <meta name="twitter:image" content="${escapeHtml(imageUrl)}">
+  <script type="application/ld+json">${serializeJsonLd(jsonLd)}</script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/" aria-label="Home">UD</a>
+      <nav id="site-nav" class="site-nav" aria-label="Primary">
+        <ul class="nav-list">
+          <li><a href="/#about">About</a></li>
+          <li><a href="/projects.html">Projects</a></li>
+          <li><a href="/blogs.html">Blog</a></li>
+          <li><a href="/#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main id="main" class="section">
+    <article class="container narrow" style="max-width: 760px; margin: 0 auto;">
+      <p class="section-intro"><a href="/blogs.html">Back to blog</a></p>
+      <h1 class="section-title">${escapeHtml(post.title || "Blog Post")}</h1>
+      <p class="blog-date" style="margin-bottom: 1.5rem;">${escapeHtml(publishedAt)}</p>
+      ${post.image ? `<figure class="blog-figure"><img class="blog-image" src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title || "Blog image")}"></figure>` : ""}
+      <div class="blog-excerpt">${postBody}</div>
+      ${sourceLink}
+    </article>
+  </main>
+  <script src="/script.js"></script>
+</body>
+</html>`;
+
+    res.type("html").send(html);
+  } catch (e) {
+    next(e);
+  }
+});
+
+app.get("/sitemap.xml", async (req, res, next) => {
+  try {
+    const siteOrigin = (process.env.SITE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
+    const blog = await readBlog();
+    const posts = addBlogSeoFields(sortBlogPosts(blog.posts));
+
+    const staticUrls = [
+      { path: "/", changefreq: "weekly", priority: "1.0" },
+      { path: "/blogs.html", changefreq: "weekly", priority: "0.9" },
+      { path: "/projects.html", changefreq: "weekly", priority: "0.9" },
+      { path: "/project.html", changefreq: "monthly", priority: "0.7" },
+    ];
+
+    const staticEntries = staticUrls
+      .map((u) => {
+        return [
+          "  <url>",
+          `    <loc>${escapeHtml(`${siteOrigin}${u.path}`)}</loc>`,
+          `    <changefreq>${u.changefreq}</changefreq>`,
+          `    <priority>${u.priority}</priority>`,
+          "  </url>",
+        ].join("\n");
+      })
+      .join("\n");
+
+    const postEntries = posts
+      .map((p) => {
+        const loc = `${siteOrigin}${p.path}`;
+        const lastmod = normalizeDate(p.date) || null;
+        return [
+          "  <url>",
+          `    <loc>${escapeHtml(loc)}</loc>`,
+          lastmod ? `    <lastmod>${lastmod}</lastmod>` : "",
+          "    <changefreq>monthly</changefreq>",
+          "    <priority>0.8</priority>",
+          "  </url>",
+        ]
+          .filter(Boolean)
+          .join("\n");
+      })
+      .join("\n");
+
+    const xml = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      staticEntries,
+      postEntries,
+      '</urlset>',
+    ].join("\n");
+
+    res.type("application/xml").send(xml);
   } catch (e) {
     next(e);
   }

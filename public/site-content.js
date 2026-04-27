@@ -220,7 +220,8 @@
     if (!blogList) return;
     blogList.innerHTML = blog
       .map(function (post) {
-        var hasLink = post.link && String(post.link).trim();
+        var detailPath = post.path && String(post.path).trim() ? String(post.path).trim() : "";
+        var sourceLink = post.link && String(post.link).trim();
         var title = escapeHtml(post.title || "");
         var rawImg = post.image && String(post.image).trim() ? String(post.image).trim() : "";
         var imgSrc = rawImg ? escapeHtml(rawImg) : "";
@@ -236,12 +237,14 @@
           '<li class="blog-item" id="' + postId + '">' +
           '<div class="card-top">' +
           '<h3 class="blog-title">' +
-          (hasLink ? '<a href="' + escapeHtml(post.link) + '">' + title + '</a>' : title) +
+          (detailPath ? '<a href="' + escapeHtml(detailPath) + '">' + title + '</a>' : title) +
           "</h3>" +
           '<button type="button" class="card-more" aria-label="Blog actions" disabled>⋯</button>' +
           '</div>' +
           '<p class="blog-date" datetime="' + escapeHtml(post.date || "") + '">' + formatBlogDate(post.date) + "</p>" +
           '<div class="blog-excerpt">' + (post.excerpt || "") + "</div>" +
+          (detailPath ? '<a class="blog-read-more" href="' + escapeHtml(detailPath) + '">Read more</a>' : "") +
+          (sourceLink ? '<a class="blog-read-more" href="' + escapeHtml(sourceLink) + '" target="_blank" rel="noopener noreferrer">Source</a>' : "") +
           imgBlock +
           '<div class="social-bar">' +
           '<button type="button" class="social-like ' + (userLiked ? 'liked' : '') + '" data-post="' + postId + '">👍 ' + (userLiked ? 'Liked' : 'Like') + ' (' + likeCount + ')</button>' +
