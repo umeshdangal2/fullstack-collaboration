@@ -355,6 +355,7 @@
             }
             document.getElementById("edit-tags").value = proj.tags || "";
             document.getElementById("edit-project-url").value = proj.url || "";
+            document.getElementById("edit-project-image").value = proj.image || "";
             document.getElementById("edit-notebook").value = proj.notebook || "";
             notebookHtmlFromFile = proj.notebook_html || "";
             notebookJsonFromFile = proj.notebook_json || null;
@@ -527,6 +528,7 @@
           details: detailsContent,
           tags: document.getElementById("edit-tags").value,
           url: document.getElementById("edit-project-url").value.trim(),
+          image: document.getElementById("edit-project-image").value.trim(),
           notebook: document.getElementById("edit-notebook").value.trim(),
           notebookHtml: notebookHtmlFromFile || "",
           notebookJson: notebookJsonFromFile ? JSON.stringify(notebookJsonFromFile) : "",

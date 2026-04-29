@@ -80,6 +80,119 @@
   <script>
     // Populate full projects list on projects page
     (function() {
+      function toAbsoluteUrl(pathLike) {
+        try {
+          return new URL(pathLike, window.location.origin).href;
+        } catch {
+          return window.location.href;
+        }
+      }
+
+      function showToast(message) {
+        var toast = document.getElementById('site-toast');
+        if (!toast) {
+          toast = document.createElement('div');
+          toast.id = 'site-toast';
+          toast.className = 'site-toast';
+          toast.setAttribute('aria-live', 'polite');
+          document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.classList.add('show');
+        clearTimeout(showToast._timer);
+        showToast._timer = setTimeout(function() {
+          toast.classList.remove('show');
+        }, 1800);
+      }
+
+      function closeCardMenus(exceptWrap) {
+        document.querySelectorAll('.card-menu-wrap.is-open').forEach(function(wrap) {
+          if (exceptWrap && wrap === exceptWrap) return;
+          wrap.classList.remove('is-open');
+          var card = wrap.closest('.project-full-card');
+          if (card) card.classList.remove('is-menu-open');
+          var menu = wrap.querySelector('.card-menu');
+          var trigger = wrap.querySelector('.card-more');
+          if (menu) menu.hidden = true;
+          if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        });
+      }
+
+      function toggleCardMenu(button) {
+        var wrap = button.closest('.card-menu-wrap');
+        if (!wrap) return;
+        var menu = wrap.querySelector('.card-menu');
+        if (!menu) return;
+        var willOpen = menu.hidden;
+        closeCardMenus(wrap);
+        menu.hidden = !willOpen;
+        wrap.classList.toggle('is-open', willOpen);
+        var card = wrap.closest('.project-full-card');
+        if (card) card.classList.toggle('is-menu-open', willOpen);
+        button.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      }
+
+      document.addEventListener('click', function(event) {
+        var el = event.target;
+        if (!(el instanceof HTMLElement)) return;
+        var wrap = el.closest('.card-menu-wrap');
+        if (!wrap) {
+          closeCardMenus();
+        }
+
+        var button = el.closest('.card-more, .card-copy-link, .card-copy-title-link, .card-open-link, .card-share-linkedin');
+        if (!button) return;
+
+        if (button.matches('.card-more')) {
+          event.preventDefault();
+          event.stopPropagation();
+          toggleCardMenu(button);
+          return;
+        }
+
+        var rawUrl = button.getAttribute('data-url') || '';
+        var targetUrl = toAbsoluteUrl(rawUrl || window.location.href);
+        var title = (button.getAttribute('data-title') || '').trim();
+
+        if (button.matches('.card-copy-link')) {
+          event.preventDefault();
+          event.stopPropagation();
+          navigator.clipboard.writeText(targetUrl)
+            .then(function() { showToast('Link copied.'); })
+            .catch(function() { window.prompt('Copy this URL', targetUrl); });
+          closeCardMenus();
+          return;
+        }
+
+        if (button.matches('.card-copy-title-link')) {
+          event.preventDefault();
+          event.stopPropagation();
+          var text = title ? (title + '\n' + targetUrl) : targetUrl;
+          navigator.clipboard.writeText(text)
+            .then(function() { showToast('Title and link copied.'); })
+            .catch(function() { window.prompt('Copy this text', text); });
+          closeCardMenus();
+          return;
+        }
+
+        if (button.matches('.card-open-link')) {
+          event.preventDefault();
+          event.stopPropagation();
+          window.open(targetUrl, '_blank', 'noopener,noreferrer');
+          closeCardMenus();
+          return;
+        }
+
+        if (button.matches('.card-share-linkedin')) {
+          event.preventDefault();
+          event.stopPropagation();
+          var shareUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(targetUrl);
+          window.open(shareUrl, '_blank', 'noopener,noreferrer');
+          closeCardMenus();
+          return;
+        }
+      });
+
       var projectsList = document.getElementById('all-projects-list');
       if (projectsList) {
         fetch('/api/public/content', { credentials: 'same-origin' })
@@ -112,16 +225,27 @@
               var linkBtn = (project.url && String(project.url).trim())
                 ? '<a class="github-btn" href="' + escapeHtml(String(project.url).trim()) + '" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-github" aria-hidden="true"></i> View on GitHub</a>'
                 : '';
-              var copyBtn = '<button type="button" class="btn btn-secondary project-share" data-url="' + detailHref + '">Copy link</button>';
+              var projectTitle = escapeHtml(project.title || '');
+              var menuBtn = '<div class="card-menu-wrap">' +
+                '<button type="button" class="card-more" aria-label="Project actions" aria-haspopup="true" aria-expanded="false">⋯</button>' +
+                '<div class="card-menu" role="menu" hidden>' +
+                '<button type="button" class="card-menu-item card-copy-link" role="menuitem" data-url="' + escapeHtml(detailHref) + '">Copy link</button>' +
+                '<button type="button" class="card-menu-item card-copy-title-link" role="menuitem" data-url="' + escapeHtml(detailHref) + '" data-title="' + projectTitle + '">Copy title + link</button>' +
+                '<button type="button" class="card-menu-item card-open-link" role="menuitem" data-url="' + escapeHtml(detailHref) + '">Open in new tab</button>' +
+                '<button type="button" class="card-menu-item card-share-linkedin" role="menuitem" data-url="' + escapeHtml(detailHref) + '">Share to LinkedIn</button>' +
+                '</div>' +
+                '</div>';
 
               return '<li class="project-full-card scroll-animate" data-href="' + detailHref + '">' +
                 imgBlock +
                 '<div class="project-card-content">' +
-                '<h3 class="project-title">' + escapeHtml(project.title || '') + '</h3>' +
+                '<div class="card-top">' +
+                '<h3 class="project-title">' + projectTitle + '</h3>' +
+                menuBtn +
+                '</div>' +
                 '<p class="project-year">' + escapeHtml(project.year || '') + '</p>' +
                 '<p class="project-description">' + escapeHtml(project.description || '') + '</p>' +
                 tagPills +
-                copyBtn +
                 linkBtn +
                 '</div>' +
                 '</li>';
@@ -133,23 +257,6 @@
               card.addEventListener('click', function(e) {
                 if (e.target.closest('a,button')) return;
                 window.location.href = this.dataset.href;
-              });
-            });
-
-            projectsList.querySelectorAll('.project-share').forEach(function(btn) {
-              btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                var raw = this.getAttribute('data-url') || '';
-                var url = new URL(raw || window.location.href, window.location.origin).href;
-                navigator.clipboard
-                  .writeText(url)
-                  .then(function() {
-                    alert('Project link copied to clipboard.');
-                  })
-                  .catch(function() {
-                    window.prompt('Copy this URL', url);
-                  });
               });
             });
 

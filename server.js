@@ -672,6 +672,7 @@ app.post("/api/admin/projects", ...writeGuard, async (req, res, next) => {
     const details = sanitizeRichText(req.body.details || "", 10000);
     const tags = sanitizeText(req.body.tags, LIMITS.tags);
     const url = normalizeOptionalUrl(req.body.url);
+    const image = normalizeOptionalImageUrl(req.body.image);
     const notebook = normalizeOptionalUrl(req.body.notebook);
     const notebookHtml = sanitizeNotebookHtml(req.body.notebookHtml);
     const notebookJson = sanitizeNotebookJson(req.body.notebookJson);
@@ -687,6 +688,7 @@ app.post("/api/admin/projects", ...writeGuard, async (req, res, next) => {
       details,
       tags,
       url,
+      image,
       notebook,
       notebook_html: notebookHtml,
       notebook_json: notebookJson,
@@ -712,6 +714,7 @@ app.put("/api/admin/projects/:id", ...writeGuard, async (req, res, next) => {
     const details = sanitizeRichText(req.body.details || "", 10000);
     const tags = sanitizeText(req.body.tags, LIMITS.tags);
     const url = normalizeOptionalUrl(req.body.url);
+    const image = normalizeOptionalImageUrl(req.body.image);
     const notebook = normalizeOptionalUrl(req.body.notebook);
     const notebookHtml = sanitizeNotebookHtml(req.body.notebookHtml);
     const notebookJson = sanitizeNotebookJson(req.body.notebookJson);
@@ -729,6 +732,7 @@ app.put("/api/admin/projects/:id", ...writeGuard, async (req, res, next) => {
       details,
       tags,
       url,
+      image,
       notebook,
       notebook_html: notebookHtml,
       notebook_json: notebookJson,
