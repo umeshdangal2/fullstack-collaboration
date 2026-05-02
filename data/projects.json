@@ -30,7 +30,11 @@
       "title": "apple",
       "description": "apple is a fruit, eat it and keep doctors away",
       "tags": "apple tree",
-      "url": ""
+      "url": "",
+      "details": "<p><br></p>",
+      "notebook": "",
+      "notebook_html": "",
+      "notebook_json": null
     },
     {
       "id": "00fa6906-3e14-4b85-9bc2-36849606ce40",
@@ -45,7 +49,7 @@
       "year": "2026",
       "title": "Test NB",
       "description": "Test notebook save",
-      "details": "<p>no</p><p><br></p>",
+      "details": "<p><span class=\"ql-cursor\">﻿</span>no</p><p><br></p>",
       "tags": "test",
       "url": "https://github.com/umeshdangal2/fullstack-collaboration",
       "notebook": "",
@@ -2883,9 +2887,9 @@
       "year": "2026",
       "title": "Test2",
       "description": "Lets see what wa[[ems",
-      "details": "<p>okay</p>",
+      "details": "<p><span class=\"ql-cursor\">﻿</span>okay</p>",
       "tags": "apple tree",
-      "url": "",
+      "url": "https://github.com/umeshdangal2/fullstack-collaboration",
       "notebook": "",
       "notebook_html": "",
       "notebook_json": null

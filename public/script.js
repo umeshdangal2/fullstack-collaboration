@@ -1,4 +1,29 @@
 (function () {
+  /* ── Dark mode toggle ── */
+  const DARK_KEY = "ud-dark-mode";
+  const htmlEl = document.documentElement;
+  const toggleInput = document.getElementById("dark-mode-toggle");
+
+  function applyTheme(dark) {
+    if (dark) {
+      htmlEl.setAttribute("data-theme", "dark");
+    } else {
+      htmlEl.removeAttribute("data-theme");
+    }
+    if (toggleInput) toggleInput.checked = dark;
+  }
+
+  // Apply saved preference immediately (before paint)
+  applyTheme(localStorage.getItem(DARK_KEY) === "1");
+
+  if (toggleInput) {
+    toggleInput.addEventListener("change", function () {
+      const isDark = toggleInput.checked;
+      applyTheme(isDark);
+      localStorage.setItem(DARK_KEY, isDark ? "1" : "0");
+    });
+  }
+
   const header = document.querySelector(".site-header");
   const nav = document.querySelector("#site-nav");
   const navLinks = nav ? nav.querySelectorAll("a[href^='#']") : [];

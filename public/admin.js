@@ -11,6 +11,31 @@
   function init() {
     console.log('Admin.js initializing...');
 
+    var DARK_KEY = "ud-dark-mode";
+    var htmlEl = document.documentElement;
+    var toggleInput = document.getElementById("dark-mode-toggle");
+
+    function applyTheme(dark) {
+      if (dark) {
+        htmlEl.setAttribute("data-theme", "dark");
+      } else {
+        htmlEl.removeAttribute("data-theme");
+      }
+      if (toggleInput) {
+        toggleInput.checked = dark;
+      }
+    }
+
+    applyTheme(localStorage.getItem(DARK_KEY) === "1");
+
+    if (toggleInput) {
+      toggleInput.addEventListener("change", function () {
+        var isDark = toggleInput.checked;
+        applyTheme(isDark);
+        localStorage.setItem(DARK_KEY, isDark ? "1" : "0");
+      });
+    }
+
     var cred = { credentials: "same-origin", headers: { "Content-Type": "application/json" } };
 
     var loginPanel = document.getElementById("login-panel");
