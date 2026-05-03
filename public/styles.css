@@ -123,9 +123,10 @@
   right: 0.3rem;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 0.65rem;
+  font-size: 0.84rem;
   line-height: 1;
-  color: var(--text-muted);
+  color: #ffd54a;
+  text-shadow: 0 0 6px rgba(255, 213, 74, 0.4);
   transition: opacity 0.25s ease;
 }
 
@@ -145,7 +146,8 @@
   content: "☽";
   right: auto;
   left: 0.3rem;
-  color: #4ecbec;
+  color: #c9d8ff;
+  text-shadow: 0 0 6px rgba(201, 216, 255, 0.35);
 }
 
 .dark-toggle:hover .dark-toggle__slider {
