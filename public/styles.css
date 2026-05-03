@@ -186,9 +186,32 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ─── Page transition ─── */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+body {
+  animation: page-in 0.25s ease both;
+}
+
+.page-leaving {
+  opacity: 0 !important;
+  transform: translateY(-4px) !important;
+  transition: opacity 0.18s ease, transform 0.18s ease !important;
+  pointer-events: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  body {
+    animation: none;
+  }
+  .page-leaving {
+    transition: none !important;
   }
   *,
   *::before,

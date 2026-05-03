@@ -24,6 +24,26 @@
     });
   }
 
+  /* ── Page-out transition on cross-page navigation ── */
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest("a[href]");
+    if (!a) return;
+    var href = a.getAttribute("href");
+    if (
+      !href ||
+      href.startsWith("#") ||
+      href.startsWith("http") ||
+      href.startsWith("mailto") ||
+      href.startsWith("tel") ||
+      a.target === "_blank" ||
+      e.ctrlKey || e.metaKey || e.shiftKey
+    ) return;
+    e.preventDefault();
+    document.body.classList.add("page-leaving");
+    var dest = href;
+    setTimeout(function () { window.location.href = dest; }, 180);
+  });
+
   const header = document.querySelector(".site-header");
   const nav = document.querySelector("#site-nav");
   const navLinks = nav ? nav.querySelectorAll("a[href^='#']") : [];
