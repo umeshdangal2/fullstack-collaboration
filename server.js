@@ -12,6 +12,13 @@ const multer = require("multer");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 
+let vercelBlobPut = null;
+try {
+  ({ put: vercelBlobPut } = require("@vercel/blob"));
+} catch {
+  vercelBlobPut = null;
+}
+
 const storage = require("./lib/cms-storage");
 
 const app = express();
@@ -315,7 +322,17 @@ async function ensureUploadDir() {
   await fs.mkdir(UPLOADS_DIR, { recursive: true });
 }
 
-const imageUpload = multer({
+const IMAGE_UPLOAD_LIMITS = {
+  files: 12,
+  fileSize: 8 * 1024 * 1024,
+};
+
+function imageFileFilter(req, file, cb) {
+  if (IMAGE_MIME_TO_EXT[file.mimetype]) return cb(null, true);
+  cb(new Error("Only JPG, PNG, GIF, and WEBP files are allowed."));
+}
+
+const imageUploadDisk = multer({
   storage: multer.diskStorage({
     destination: function (req, file, cb) {
       cb(null, UPLOADS_DIR);
@@ -326,15 +343,55 @@ const imageUpload = multer({
       cb(null, `${Date.now()}-${token}${ext || ".bin"}`);
     },
   }),
-  limits: {
-    files: 12,
-    fileSize: 8 * 1024 * 1024,
-  },
-  fileFilter: function (req, file, cb) {
-    if (IMAGE_MIME_TO_EXT[file.mimetype]) return cb(null, true);
-    cb(new Error("Only JPG, PNG, GIF, and WEBP files are allowed."));
-  },
+  limits: IMAGE_UPLOAD_LIMITS,
+  fileFilter: imageFileFilter,
 });
+
+const imageUploadMemory = multer({
+  storage: multer.memoryStorage(),
+  limits: IMAGE_UPLOAD_LIMITS,
+  fileFilter: imageFileFilter,
+});
+
+function runImageUpload(upload, req, res) {
+  return new Promise((resolve, reject) => {
+    upload.array("images", 12)(req, res, function (err) {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+}
+
+function mapUploadError(err) {
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return "Each image must be 8MB or smaller.";
+    }
+    if (err.code === "LIMIT_FILE_COUNT") {
+      return "You can upload up to 12 images at once.";
+    }
+    return "Image upload failed.";
+  }
+  return (err && err.message) || "Image upload failed.";
+}
+
+async function uploadToVercelBlob(files) {
+  if (!vercelBlobPut) {
+    throw new Error("Vercel Blob is not configured. Add BLOB_READ_WRITE_TOKEN in your Vercel project settings.");
+  }
+  const uploads = await Promise.all(
+    files.map(async function (file) {
+      const ext = IMAGE_MIME_TO_EXT[file.mimetype] || ".bin";
+      const token = crypto.randomBytes(8).toString("hex");
+      const blob = await vercelBlobPut(`admin-images/${Date.now()}-${token}${ext}`, file.buffer, {
+        access: "public",
+        contentType: file.mimetype,
+      });
+      return blob.url;
+    })
+  );
+  return uploads;
+}
 
 app.set("trust proxy", 1);
 
@@ -634,38 +691,39 @@ app.get("/sitemap.xml", async (req, res, next) => {
 
 const writeGuard = [requireAuth, requirePersistence];
 
-app.post("/api/admin/upload-images", ...writeGuard, async (req, res, next) => {
+app.post("/api/admin/upload-images", requireAuth, async (req, res, next) => {
   try {
-    if (process.env.VERCEL) {
-      return res.status(503).json({
-        error: "Image upload to local disk is unavailable on Vercel. Use a persistent object store for uploads.",
-      });
+    const onVercel = Boolean(process.env.VERCEL);
+    if (!onVercel) {
+      await ensureUploadDir();
     }
-    await ensureUploadDir();
-    imageUpload.array("images", 12)(req, res, function (err) {
-      if (err) {
-        if (err instanceof multer.MulterError) {
-          if (err.code === "LIMIT_FILE_SIZE") {
-            return res.status(400).json({ error: "Each image must be 8MB or smaller." });
-          }
-          if (err.code === "LIMIT_FILE_COUNT") {
-            return res.status(400).json({ error: "You can upload up to 12 images at once." });
-          }
-          return res.status(400).json({ error: "Image upload failed." });
-        }
-        return res.status(400).json({ error: err.message || "Image upload failed." });
-      }
 
-      const files = Array.isArray(req.files) ? req.files : [];
-      if (!files.length) {
-        return res.status(400).json({ error: "Please select at least one image." });
-      }
+    const uploader = onVercel ? imageUploadMemory : imageUploadDisk;
+    try {
+      await runImageUpload(uploader, req, res);
+    } catch (uploadErr) {
+      return res.status(400).json({ error: mapUploadError(uploadErr) });
+    }
 
-      const images = files.map(function (f) {
+    const files = Array.isArray(req.files) ? req.files : [];
+    if (!files.length) {
+      return res.status(400).json({ error: "Please select at least one image." });
+    }
+
+    let images = [];
+    if (onVercel) {
+      try {
+        images = await uploadToVercelBlob(files);
+      } catch (blobErr) {
+        return res.status(503).json({ error: blobErr.message || "Blob upload failed." });
+      }
+    } else {
+      images = files.map(function (f) {
         return `/images/uploads/${f.filename}`;
       });
-      return res.status(201).json({ images });
-    });
+    }
+
+    return res.status(201).json({ images });
   } catch (e) {
     next(e);
   }
