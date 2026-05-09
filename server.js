@@ -2,11 +2,13 @@
 
 require("dotenv").config();
 
+const fs = require("fs/promises");
 const path = require("path");
 const crypto = require("crypto");
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
+const multer = require("multer");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 
@@ -18,10 +20,18 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 const isProd = NODE_ENV === "production";
 
 const DATA_DIR = path.join(__dirname, "data");
+const PUBLIC_DIR = path.join(__dirname, "public");
+const UPLOADS_DIR = path.join(PUBLIC_DIR, "images", "uploads");
 const BLOG_FILE = path.join(DATA_DIR, "blog.json");
 const PROJECTS_FILE = path.join(DATA_DIR, "projects.json");
 const SOCIAL_FILE = path.join(DATA_DIR, "social.json");
 const ADMIN_COOKIE = "portfolio_admin";
+const IMAGE_MIME_TO_EXT = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/gif": ".gif",
+  "image/webp": ".webp",
+};
 
 const LIMITS = {
   title: 200,
@@ -300,6 +310,31 @@ function setAdminCookie(res) {
 function clearAdminCookie(res) {
   res.clearCookie(ADMIN_COOKIE, { path: "/", signed: true });
 }
+
+async function ensureUploadDir() {
+  await fs.mkdir(UPLOADS_DIR, { recursive: true });
+}
+
+const imageUpload = multer({
+  storage: multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, UPLOADS_DIR);
+    },
+    filename: function (req, file, cb) {
+      const ext = IMAGE_MIME_TO_EXT[file.mimetype];
+      const token = crypto.randomBytes(8).toString("hex");
+      cb(null, `${Date.now()}-${token}${ext || ".bin"}`);
+    },
+  }),
+  limits: {
+    files: 12,
+    fileSize: 8 * 1024 * 1024,
+  },
+  fileFilter: function (req, file, cb) {
+    if (IMAGE_MIME_TO_EXT[file.mimetype]) return cb(null, true);
+    cb(new Error("Only JPG, PNG, GIF, and WEBP files are allowed."));
+  },
+});
 
 app.set("trust proxy", 1);
 
@@ -599,6 +634,43 @@ app.get("/sitemap.xml", async (req, res, next) => {
 
 const writeGuard = [requireAuth, requirePersistence];
 
+app.post("/api/admin/upload-images", ...writeGuard, async (req, res, next) => {
+  try {
+    if (process.env.VERCEL) {
+      return res.status(503).json({
+        error: "Image upload to local disk is unavailable on Vercel. Use a persistent object store for uploads.",
+      });
+    }
+    await ensureUploadDir();
+    imageUpload.array("images", 12)(req, res, function (err) {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          if (err.code === "LIMIT_FILE_SIZE") {
+            return res.status(400).json({ error: "Each image must be 8MB or smaller." });
+          }
+          if (err.code === "LIMIT_FILE_COUNT") {
+            return res.status(400).json({ error: "You can upload up to 12 images at once." });
+          }
+          return res.status(400).json({ error: "Image upload failed." });
+        }
+        return res.status(400).json({ error: err.message || "Image upload failed." });
+      }
+
+      const files = Array.isArray(req.files) ? req.files : [];
+      if (!files.length) {
+        return res.status(400).json({ error: "Please select at least one image." });
+      }
+
+      const images = files.map(function (f) {
+        return `/images/uploads/${f.filename}`;
+      });
+      return res.status(201).json({ images });
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 app.post("/api/admin/blog", ...writeGuard, async (req, res, next) => {
   try {
     const title = sanitizeText(req.body.title, LIMITS.title);
@@ -774,8 +846,7 @@ app.use((err, req, res, next) => {
 requireProdSecretsForLocal();
 
 if (require.main === module) {
-  const fs = require("fs/promises");
-  fs.mkdir(DATA_DIR, { recursive: true })
+  Promise.all([fs.mkdir(DATA_DIR, { recursive: true }), ensureUploadDir()])
     .then(() => {
       app.listen(PORT, () => {
         console.log(`Portfolio server at http://localhost:${PORT}`);

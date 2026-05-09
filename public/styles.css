@@ -1372,6 +1372,28 @@ a:hover {
   margin-bottom: 0.5rem;
 }
 
+.editor-image-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin-bottom: 0.5rem;
+}
+
+.editor-image-tools small {
+  color: var(--text-muted);
+}
+
+.rich-editor .ql-editor img,
+.blog-excerpt img,
+.project-details img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin: 0.8rem 0;
+  border: 1px solid var(--border);
+}
+
 .notebook-embed {
   background: var(--bg-elevated);
   border: 1px solid var(--border);

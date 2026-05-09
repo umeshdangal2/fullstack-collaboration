@@ -71,6 +71,12 @@
     var notebookJsonFromFile = null;
     var editDetailsEditor = document.getElementById("edit-details-editor");
     var editExcerptEditor = document.getElementById("edit-excerpt-editor");
+    var blogInlineImagesInput = document.getElementById("blog-inline-images");
+    var projectInlineImagesInput = document.getElementById("project-inline-images");
+    var btnBlogInsertImage = document.getElementById("btn-blog-insert-image");
+    var btnProjectInsertImage = document.getElementById("btn-project-insert-image");
+    var lastBlogSelection = null;
+    var lastProjectSelection = null;
 
     function setNotebookFilePreview(name) {
       if (name) {
@@ -106,11 +112,77 @@
       });
     }
 
+    function uploadImages(files) {
+      if (!files || !files.length) return Promise.resolve([]);
+      var formData = new FormData();
+      Array.from(files).forEach(function (file) {
+        formData.append("images", file);
+      });
+      return fetch("/api/admin/upload-images", {
+        method: "POST",
+        credentials: "same-origin",
+        body: formData,
+      }).then(function (r) {
+        if (r.status === 401) {
+          showLogin();
+          throw new Error("Unauthorized");
+        }
+        return r.json().then(function (json) {
+          if (!r.ok) {
+            throw new Error((json && json.error) || "Image upload failed");
+          }
+          return Array.isArray(json.images) ? json.images : [];
+        });
+      });
+    }
+
+    function insertImagesAtCursor(quill, imageUrls, fallbackRange) {
+      if (!quill || !Array.isArray(imageUrls) || !imageUrls.length) return;
+      var current = quill.getSelection(true) || fallbackRange || { index: quill.getLength(), length: 0 };
+      var cursor = current.index;
+      imageUrls.forEach(function (url) {
+        quill.insertEmbed(cursor, "image", url, "user");
+        cursor += 1;
+        quill.insertText(cursor, "\n", "user");
+        cursor += 1;
+      });
+      quill.setSelection(cursor, 0, "silent");
+    }
+
+    function onInlineImagesChosen(files, quill, getFallbackRange) {
+      if (!files || !files.length || !quill) return;
+      uploadImages(files)
+        .then(function (urls) {
+          if (!urls.length) {
+            throw new Error("No images were uploaded.");
+          }
+          insertImagesAtCursor(quill, urls, getFallbackRange ? getFallbackRange() : null);
+          show(dashMsg, "admin-msg-success", urls.length > 1 ? "Images inserted into editor." : "Image inserted into editor.");
+        })
+        .catch(function (err) {
+          show(dashMsg, "admin-msg-error", err && err.message ? err.message : "Could not upload images.");
+        });
+    }
+
     if (editDetailsEditor && window.Quill) {
       quillDetails = new Quill(editDetailsEditor, {
         theme: 'snow',
         modules: {
-          toolbar: '#edit-details-toolbar'
+          toolbar: {
+            container: '#edit-details-toolbar',
+            handlers: {
+              image: function () {
+                if (projectInlineImagesInput) {
+                  projectInlineImagesInput.click();
+                }
+              }
+            }
+          }
+        }
+      });
+      quillDetails.on("selection-change", function (range) {
+        if (range) {
+          lastProjectSelection = range;
         }
       });
     }
@@ -119,8 +191,50 @@
       quillExcerpt = new Quill(editExcerptEditor, {
         theme: 'snow',
         modules: {
-          toolbar: '#edit-excerpt-toolbar'
+          toolbar: {
+            container: '#edit-excerpt-toolbar',
+            handlers: {
+              image: function () {
+                if (blogInlineImagesInput) {
+                  blogInlineImagesInput.click();
+                }
+              }
+            }
+          }
         }
+      });
+      quillExcerpt.on("selection-change", function (range) {
+        if (range) {
+          lastBlogSelection = range;
+        }
+      });
+    }
+
+    if (btnBlogInsertImage) {
+      btnBlogInsertImage.addEventListener("click", function () {
+        if (blogInlineImagesInput) blogInlineImagesInput.click();
+      });
+    }
+
+    if (btnProjectInsertImage) {
+      btnProjectInsertImage.addEventListener("click", function () {
+        if (projectInlineImagesInput) projectInlineImagesInput.click();
+      });
+    }
+
+    if (blogInlineImagesInput) {
+      blogInlineImagesInput.addEventListener("change", function (event) {
+        var files = event.target.files;
+        onInlineImagesChosen(files, quillExcerpt, function () { return lastBlogSelection; });
+        blogInlineImagesInput.value = "";
+      });
+    }
+
+    if (projectInlineImagesInput) {
+      projectInlineImagesInput.addEventListener("change", function (event) {
+        var files = event.target.files;
+        onInlineImagesChosen(files, quillDetails, function () { return lastProjectSelection; });
+        projectInlineImagesInput.value = "";
       });
     }
 

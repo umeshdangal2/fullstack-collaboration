@@ -116,6 +116,7 @@
                 <button class="ql-blockquote" type="button" aria-label="Blockquote"></button>
                 <button class="ql-code-block" type="button" aria-label="Code block"></button>
                 <button class="ql-link" type="button" aria-label="Link"></button>
+                <button class="ql-image" type="button" aria-label="Insert image"></button>
                 <select class="ql-size" aria-label="Font size">
                   <option value="small"></option>
                   <option selected></option>
@@ -130,6 +131,11 @@
                 </select>
                 <select class="ql-color" aria-label="Text color"></select>
                 <button class="ql-clean" type="button" aria-label="Clear formatting"></button>
+              </div>
+              <div class="editor-image-tools">
+                <button type="button" id="btn-blog-insert-image" class="admin-btn admin-btn-ghost">Upload images</button>
+                <input type="file" id="blog-inline-images" accept="image/png,image/jpeg,image/gif,image/webp" multiple class="admin-hidden">
+                <small>Choose one or multiple images. They will be inserted at your cursor position.</small>
               </div>
               <div id="edit-excerpt-editor" class="rich-editor"></div>
               <textarea id="edit-excerpt" class="admin-hidden" maxlength="10000"></textarea>
@@ -184,6 +190,7 @@
                 <button class="ql-blockquote" type="button" aria-label="Blockquote"></button>
                 <button class="ql-code-block" type="button" aria-label="Code block"></button>
                 <button class="ql-link" type="button" aria-label="Link"></button>
+                <button class="ql-image" type="button" aria-label="Insert image"></button>
                 <select class="ql-size" aria-label="Font size">
                   <option value="small"></option>
                   <option selected></option>
@@ -203,6 +210,11 @@
                 </select>
                 <select class="ql-color" aria-label="Text color"></select>
                 <button class="ql-clean" type="button" aria-label="Clear formatting"></button>
+              </div>
+              <div class="editor-image-tools">
+                <button type="button" id="btn-project-insert-image" class="admin-btn admin-btn-ghost">Upload images</button>
+                <input type="file" id="project-inline-images" accept="image/png,image/jpeg,image/gif,image/webp" multiple class="admin-hidden">
+                <small>Choose one or multiple images. They will be inserted at your cursor position.</small>
               </div>
               <div id="edit-details-editor" class="rich-editor"></div>
               <textarea id="edit-details" class="admin-hidden" maxlength="10000" placeholder="Extended project details, documentation, show notes, and embed links"></textarea>
